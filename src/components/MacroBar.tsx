@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from "framer-motion";
 
@@ -12,11 +13,15 @@ interface MacroBarProps {
   fatTarget: number;
 }
 
-export function MacroBar({ protein, proteinTarget, carbs, carbsTarget, fat, fatTarget }: MacroBarProps) {
+function MacroBarComponent({ protein, proteinTarget, carbs, carbsTarget, fat, fatTarget }: MacroBarProps) {
   const reduceMotion = useReducedMotion();
-  const proteinPct = Math.min((protein / proteinTarget) * 100, 100);
-  const carbsPct = Math.min((carbs / carbsTarget) * 100, 100);
-  const fatPct = Math.min((fat / fatTarget) * 100, 100);
+
+  const { proteinPct, carbsPct, fatPct } = useMemo(() => ({
+    proteinPct: Math.min((protein / proteinTarget) * 100, 100),
+    carbsPct: Math.min((carbs / carbsTarget) * 100, 100),
+    fatPct: Math.min((fat / fatTarget) * 100, 100),
+  }), [protein, proteinTarget, carbs, carbsTarget, fat, fatTarget]);
+
   const duration = reduceMotion ? 0 : 0.8;
 
   return (
@@ -83,3 +88,5 @@ export function MacroBar({ protein, proteinTarget, carbs, carbsTarget, fat, fatT
     </div>
   );
 }
+
+export const MacroBar = memo(MacroBarComponent);
