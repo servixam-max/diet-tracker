@@ -1,4 +1,4 @@
-// Ollama Cloud integration for food analysis
+// Ollama LOCAL integration for food analysis
 
 export interface FoodAnalysis {
   name: string;
@@ -10,56 +10,74 @@ export interface FoodAnalysis {
   allergens: string[];
 }
 
-const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || "https://ollama.cloud";
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
+const VISION_MODEL = process.env.OLLAMA_VISION_MODEL || "llava:latest";
 
 export async function analyzeFoodImage(base64Image: string): Promise<FoodAnalysis> {
-  const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: process.env.OLLAMA_VISION_MODEL || "llava-llama3",
-      prompt: `Analiza esta foto de comida. Identifica:
-1) El plato/ingredientes principales
-2) Estimación calórica aproximada (kcal)
-3) Proteínas, carbohidratos y grasas en gramos
-4) Posibles alérgenos (leche, huevos, gluten, frutos secos, etc)
-
-Devuelve SOLO un JSON con este formato exacto, sin texto adicional:
+  console.log("[Ollama Local] Analyzing with model:", VISION_MODEL);
+  console.log("[Ollama Local] Server:", OLLAMA_BASE_URL);
+  
+  try {
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: VISION_MODEL,
+        prompt: `You are a nutritionist. Analyze this food photo and respond ONLY with valid JSON in this exact format, no other text:
 {
-  "name": "nombre del plato",
-  "calories": 350,
-  "protein_g": 25.5,
-  "carbs_g": 30.2,
-  "fat_g": 12.1,
-  "ingredients": ["ingrediente1", "ingrediente2"],
-  "allergens": ["leche", "gluten"]
+  "name": "dish name in Spanish",
+  "calories": number (kcal per serving, no decimals),
+  "protein_g": number (grams, 1 decimal),
+  "carbs_g": number (grams, 1 decimal),
+  "fat_g": number (grams, 1 decimal),
+  "ingredients": ["ingredient1", "ingredient2"],
+  "allergens": ["milk", "gluten", "nuts"]
 }`,
-      images: [base64Image],
-      stream: false,
-    }),
-  });
+        images: [base64Image.split(',')[1] || base64Image], // Remove data:image/...;base64, prefix if present
+        stream: false,
+        options: {
+          temperature: 0.1,
+          num_predict: 300,
+        }
+      }),
+    });
 
-  if (!response.ok) {
-    throw new Error(`Ollama API error: ${response.status}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("[Ollama Local] API error:", response.status, errorText);
+      throw new Error(`Ollama API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const text = data.response || "";
+
+    console.log("[Ollama Local] Raw response:", text.substring(0, 500));
+
+    // Try to extract JSON from response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const result = JSON.parse(jsonMatch[0]) as FoodAnalysis;
+        console.log("[Ollama Local] Parsed result:", result);
+        return result;
+      } catch (e) {
+        console.error("[Ollama Local] JSON parse error:", e);
+      }
+    }
+
+    // Fallback if no valid JSON found
+    console.log("[Ollama Local] Using fallback data");
+    return {
+      name: "Plato de comida",
+      calories: 300,
+      protein_g: 20,
+      carbs_g: 30,
+      fat_g: 15,
+      ingredients: ["comida"],
+      allergens: [],
+    };
+  } catch (error) {
+    console.error("[Ollama Local] Request failed:", error);
+    throw error;
   }
-
-  const data = await response.json();
-  const text = data.response || data.text || "";
-
-  // Try to extract JSON from response
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    return JSON.parse(jsonMatch[0]) as FoodAnalysis;
-  }
-
-  // Fallback if no JSON found
-  return {
-    name: "Plato detectado",
-    calories: 300,
-    protein_g: 20,
-    carbs_g: 30,
-    fat_g: 15,
-    ingredients: [],
-    allergens: [],
-  };
 }

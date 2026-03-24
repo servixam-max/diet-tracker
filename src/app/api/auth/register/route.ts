@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     if (profileError) {
       console.error("Profile creation error:", profileError);
-      // Don't fail the request, user was created
+      return NextResponse.json({ error: "Error al crear perfil: " + profileError.message }, { status: 400 });
     }
 
     return NextResponse.json({

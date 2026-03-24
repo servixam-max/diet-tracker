@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useReducedMotion } from "framer-motion";
 
 interface MacroBarProps {
   protein: number;
@@ -12,17 +13,19 @@ interface MacroBarProps {
 }
 
 export function MacroBar({ protein, proteinTarget, carbs, carbsTarget, fat, fatTarget }: MacroBarProps) {
+  const reduceMotion = useReducedMotion();
   const proteinPct = Math.min((protein / proteinTarget) * 100, 100);
   const carbsPct = Math.min((carbs / carbsTarget) * 100, 100);
   const fatPct = Math.min((fat / fatTarget) * 100, 100);
+  const duration = reduceMotion ? 0 : 0.8;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" role="progressbar" aria-label="Distribución de macronutrientes">
       {/* Protein */}
       <div className="space-y-1">
         <div className="flex justify-between text-xs">
           <span className="text-blue-400 font-medium">Proteínas</span>
-          <span className="text-zinc-500">{protein}g / {proteinTarget}g</span>
+          <span className="text-zinc-400">{protein}g / {proteinTarget}g</span>
         </div>
         <div className="h-2 bg-zinc-800/50 rounded-full overflow-hidden">
           <motion.div
@@ -30,7 +33,10 @@ export function MacroBar({ protein, proteinTarget, carbs, carbsTarget, fat, fatT
             style={{ background: 'linear-gradient(90deg, #3b82f6, #60a5fa)' }}
             initial={{ width: 0 }}
             animate={{ width: `${proteinPct}%` }}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
+            transition={{ duration, ease: "easeOut", delay: 0.1 }}
+            aria-valuenow={protein}
+            aria-valuemin={0}
+            aria-valuemax={proteinTarget}
           />
         </div>
       </div>
@@ -39,7 +45,7 @@ export function MacroBar({ protein, proteinTarget, carbs, carbsTarget, fat, fatT
       <div className="space-y-1">
         <div className="flex justify-between text-xs">
           <span className="text-yellow-400 font-medium">Carbohidratos</span>
-          <span className="text-zinc-500">{carbs}g / {carbsTarget}g</span>
+          <span className="text-zinc-400">{carbs}g / {carbsTarget}g</span>
         </div>
         <div className="h-2 bg-zinc-800/50 rounded-full overflow-hidden">
           <motion.div
@@ -47,7 +53,10 @@ export function MacroBar({ protein, proteinTarget, carbs, carbsTarget, fat, fatT
             style={{ background: 'linear-gradient(90deg, #eab308, #facc15)' }}
             initial={{ width: 0 }}
             animate={{ width: `${carbsPct}%` }}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+            transition={{ duration, ease: "easeOut", delay: 0.2 }}
+            aria-valuenow={carbs}
+            aria-valuemin={0}
+            aria-valuemax={carbsTarget}
           />
         </div>
       </div>
@@ -56,7 +65,7 @@ export function MacroBar({ protein, proteinTarget, carbs, carbsTarget, fat, fatT
       <div className="space-y-1">
         <div className="flex justify-between text-xs">
           <span className="text-red-400 font-medium">Grasas</span>
-          <span className="text-zinc-500">{fat}g / {fatTarget}g</span>
+          <span className="text-zinc-400">{fat}g / {fatTarget}g</span>
         </div>
         <div className="h-2 bg-zinc-800/50 rounded-full overflow-hidden">
           <motion.div
@@ -64,7 +73,10 @@ export function MacroBar({ protein, proteinTarget, carbs, carbsTarget, fat, fatT
             style={{ background: 'linear-gradient(90deg, #ef4444, #f87171)' }}
             initial={{ width: 0 }}
             animate={{ width: `${fatPct}%` }}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
+            transition={{ duration, ease: "easeOut", delay: 0.3 }}
+            aria-valuenow={fat}
+            aria-valuemin={0}
+            aria-valuemax={fatTarget}
           />
         </div>
       </div>

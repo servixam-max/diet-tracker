@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { logger } from "@/lib/logger";
 
 interface User {
   id: string;
@@ -13,6 +14,7 @@ interface User {
   height_cm?: number;
   activity_level?: string;
   goal?: string;
+  speed?: string;
   daily_calories?: number;
   preferred_meals?: number;
   dietary_restrictions?: string[];
@@ -108,14 +110,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await refreshUser();
       return {};
     } catch (error) {
-      console.error("Login error:", error);
+      logger.error("Login error:", error);
       return { error: "Error al iniciar sesión" };
     }
   }
 
   async function register(data: RegisterData): Promise<{ error?: string }> {
     try {
-      const { error: authError } = await supabase.auth.signUp({
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
@@ -127,10 +129,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: authError.message };
       }
 
+      // Create profile in public.profiles
+      if (authData?.user) {
+        const { error: profileError } = await supabase.from("profiles").insert({
+          id: authData.user.id,
+          email: data.email,
+          name: data.name || data.email.split("@")[0],
+          age: data.age || null,
+          gender: data.gender || null,
+          weight_kg: data.weight || null,
+          height_cm: data.height || null,
+          activity_level: data.activityLevel || null,
+          goal: data.goal || null,
+          speed: data.speed || null,
+          daily_calories: data.dailyCalories || null,
+          preferred_meals: data.preferredMeals || 4,
+          dietary_restrictions: data.restrictions || [],
+        });
+
+        if (profileError) {
+          logger.error("Profile creation error:", profileError);
+          return { error: "Error al crear perfil: " + profileError.message };
+        }
+      }
+
       // Refresh will be called by onAuthStateChange
       return {};
     } catch (error) {
-      console.error("Register error:", error);
+      logger.error("Register error:", error);
       return { error: "Error al registrar" };
     }
   }

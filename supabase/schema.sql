@@ -16,8 +16,23 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   daily_calories INTEGER,
   preferred_meals INTEGER DEFAULT 4 CHECK (preferred_meals BETWEEN 3 AND 5),
   dietary_restrictions TEXT[] DEFAULT '{}',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Trigger para actualizar updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_profiles_updated_at
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TABLE IF NOT EXISTS public.recipes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -79,6 +94,11 @@ CREATE TABLE IF NOT EXISTS public.food_logs (
   source TEXT CHECK (source IN ('recipe', 'barcode', 'photo', 'manual')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Índices críticos para rendimiento
+CREATE INDEX IF NOT EXISTS idx_food_logs_date ON food_logs(date);
+CREATE INDEX IF NOT EXISTS idx_food_logs_user ON food_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_food_logs_user_date ON food_logs(user_id, date);
 
 CREATE TABLE IF NOT EXISTS public.shopping_lists (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
