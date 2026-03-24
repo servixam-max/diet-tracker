@@ -32,21 +32,8 @@ export interface Ingredient {
   supermarket?: string;
 }
 
-export interface SupermarketProduct {
-  name: string;
-  brand: string;
-  price: number;
-  unit: string;
-  supermarket: string;
-  barcode?: string;
-  category?: string;
-  caloriesPer100g?: number;
-  proteinPer100g?: number;
-  carbsPer100g?: number;
-  fatPer100g?: number;
-}
-
 export const RECIPES: Recipe[] = [
+  // MERCADONA RECIPES
   {
     id: "m1",
     name: "Ensalada de pollo Mercadona",
@@ -174,6 +161,7 @@ export const RECIPES: Recipe[] = [
     image: "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600",
     mealType: ["comida", "cena"],
   },
+  // LIDL RECIPES
   {
     id: "l1",
     name: "Salmón al vapor con limón",
@@ -270,6 +258,7 @@ export const RECIPES: Recipe[] = [
     image: "https://images.unsplash.com/photo-1546793665-c74683f339c1?w=600",
     mealType: ["comida", "cena"],
   },
+  // ALDI RECIPES
   {
     id: "a1",
     name: "Tacos de pavo bajos en grasa",
@@ -364,6 +353,7 @@ export const RECIPES: Recipe[] = [
     image: "https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=600",
     mealType: ["desayuno", "snack"],
   },
+  // FAMILY CASH RECIPES
   {
     id: "f1",
     name: "Macarrones con atún y tomate",
@@ -491,6 +481,26 @@ export const RECIPES: Recipe[] = [
   },
 ];
 
+export function filterRecipesBySupermarket(supermarket: string): Recipe[] {
+  if (supermarket === "Todos") return recipes;
+  return recipes.filter((r) => r.supermarket === supermarket);
+}
+
+export function filterRecipesByMealType(mealType: string): Recipe[] {
+  if (mealType === "Todos") return recipes;
+  return recipes.filter((r) => r.mealType.includes(mealType as any));
+}
+
+export function searchRecipes(query: string): Recipe[] {
+  const lowerQuery = query.toLowerCase();
+  return recipes.filter(
+    (r) =>
+      r.name.toLowerCase().includes(lowerQuery) ||
+      r.description.toLowerCase().includes(lowerQuery) ||
+      r.tags.some((t) => t.toLowerCase().includes(lowerQuery))
+  );
+}
+
 // Helper function to generate shopping list from recipes
 export function generateWeeklyShoppingList(recipes: Recipe[]): Ingredient[] {
   const ingredientMap = new Map<string, Ingredient>();
@@ -499,6 +509,7 @@ export function generateWeeklyShoppingList(recipes: Recipe[]): Ingredient[] {
     recipe.ingredients.forEach((ing) => {
       const key = ing.item.toLowerCase();
       if (ingredientMap.has(key)) {
+        // Simple merge - in real app would parse amounts
         const existing = ingredientMap.get(key)!;
         existing.amount = `${existing.amount} + ${ing.amount}`;
       } else {
@@ -510,29 +521,28 @@ export function generateWeeklyShoppingList(recipes: Recipe[]): Ingredient[] {
   return Array.from(ingredientMap.values());
 }
 
-// Filter functions
-export function filterRecipesBySupermarket(supermarket: string): Recipe[] {
-  if (supermarket === "Todos") return RECIPES;
-  return RECIPES.filter((r) => r.supermarket === supermarket);
+// Supermarket products mapping
+export interface SupermarketProduct {
+  supermarket: string;
+  name: string;
+  brand: string;
+  price: number;
+  unit: string;
 }
 
-export function filterRecipesByMealType(mealType: string): Recipe[] {
-  if (mealType === "Todos") return RECIPES;
-  return RECIPES.filter((r) => r.mealType.includes(mealType as any));
-}
+export const SUPERMARKET_PRODUCTS: Record<string, SupermarketProduct[]> = {
+  Mercadona: [
+    { name: "Pechuga de pollo", brand: "Mercadona", price: 4.95, unit: "kg" },
+    { name: "Huevos", brand: "Mercadona", price: 2.35, unit: "12" },
+    { name: "Leche semidesnatada", brand: "Mercadona", price: 1.19, unit: "1L" },
+  ],
+  Lidl: [],
+  Aldi: [],
+  "Family Cash": [],
+};
 
-export function searchRecipes(query: string): Recipe[] {
-  const lowerQuery = query.toLowerCase();
-  return RECIPES.filter(
-    (r) =>
-      r.name.toLowerCase().includes(lowerQuery) ||
-      r.description.toLowerCase().includes(lowerQuery) ||
-      r.tags.some((t) => t.toLowerCase().includes(lowerQuery))
-  );
-}
-
-// Products for API
-export const SUPERMARKET_PRODUCTS: SupermarketProduct[] = [
+// Products array for API
+export const SUPERMARKET_PRODUCTS: (SupermarketProduct & { supermarket: string })[] = [
   { name: "Pechuga de pollo", brand: "Mercadona", price: 4.95, unit: "kg", supermarket: "Mercadona" },
   { name: "Huevos", brand: "Mercadona", price: 2.35, unit: "12", supermarket: "Mercadona" },
   { name: "Leche semidesnatada", brand: "Mercadona", price: 1.19, unit: "1L", supermarket: "Mercadona" },
