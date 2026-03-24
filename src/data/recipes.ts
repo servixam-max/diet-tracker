@@ -217,6 +217,46 @@ export const SUPERMARKET_PRODUCTS: SupermarketProduct[] = [
   { barcode: "3000000500033", name: "Guisantes", brand: "Family Cash", supermarket: "Family Cash", category: "legumbres", caloriesPer100g: 81, proteinPer100g: 6, carbsPer100g: 14, fatPer100g: 0.4 },
 ];
 
+// Función para obtener recetas por supermercado
+export function getRecipesBySupermarket(supermarket: "Mercadona" | "Lidl" | "Aldi" | "Family Cash"): Recipe[] {
+  return RECIPES.filter(r => r.supermarket === supermarket);
+}
+
+// Función para obtener recetas por tipo de comida
+export function getRecipesByMealType(mealType: "desayuno" | "comida" | "cena" | "snack"): Recipe[] {
+  return RECIPES.filter(r => r.mealType.includes(mealType));
+}
+
+// Función para buscar recetas
+export function searchRecipes(query: string): Recipe[] {
+  const lowerQuery = query.toLowerCase();
+  return RECIPES.filter(r => 
+    r.name.toLowerCase().includes(lowerQuery) ||
+    r.description.toLowerCase().includes(lowerQuery) ||
+    r.tags.some(t => t.toLowerCase().includes(lowerQuery))
+  );
+}
+
+// Función para generar lista de compra semanal
+export function generateWeeklyShoppingList(recipes: Recipe[]): Ingredient[] {
+  const ingredientMap = new Map<string, Ingredient>();
+  
+  recipes.forEach(recipe => {
+    recipe.ingredients.forEach(ing => {
+      const key = ing.item.toLowerCase();
+      if (ingredientMap.has(key)) {
+        // Aquí se podría hacer suma de cantidades si fueran numéricas
+        const existing = ingredientMap.get(key)!;
+        existing.amount = `${existing.amount} + ${ing.amount}`;
+      } else {
+        ingredientMap.set(key, { ...ing });
+      }
+    });
+  });
+  
+  return Array.from(ingredientMap.values());
+}
+
 // RECETAS REALES - 100+ recetas organizadas por supermercado y tipo de comida
 export const RECIPES: Recipe[] = [
   // ============================================
@@ -10694,8 +10734,162 @@ export const RECIPES: Recipe[] = [
     instructions: [
       "Calienta el caldo con el miso.",
       "Añade el tofu en cubos y las algas.",
-      "Decora con cebofu",
-    description: "Cena asiática, ligera y probiótica.",
+      "Decora con cebolleta."
+    ],
+    prepTime: 5,
+    cookTime: 10,
+    servings: 1,
+    calories: 125,
+    protein: 9.3,
+    carbs: 11.1,
+    fat: 5,
+    difficulty: "Fácil",
+    tags: ["cena", "vegano", "asiático"],
+    supermarket: "Lidl",
+    image: "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600",
+    mealType: ["cena"],
+  },
+  {
+    id: "extra-223",
+    name: "Tortilla Francesa con Finas Hierbas",
+    description: "Desayuno clásico, proteico y muy rápido.",
     ingredients: [
-      { item: "Pasta de miso", amount: "30g", calories: 60, protein: 3, carbs: 8, fat: 2 },
-      { item: "T
+      { item: "Huevos", amount: "2 unidades", calories: 140, protein: 12, carbs: 1, fat: 10 },
+      { item: "Finas hierbas", amount: "1 pizca", calories: 1, protein: 0, carbs: 0.2, fat: 0 },
+      { item: "Queso cremoso", amount: "20g", calories: 50, protein: 3, carbs: 0.5, fat: 4 },
+      { item: "Aceite de oliva", amount: "1 cdta", calories: 40, protein: 0, carbs: 0, fat: 4.5 },
+    ],
+    instructions: [
+      "Bate los huevos con las hierbas.",
+      "Cuece en una sartén con aceite.",
+      "Doso", amount: "30g", calories: 80, protein: 5, carbs: 1, fat: 6 },
+      { item: "Aceite de oliva", amount: "1 cdta", calories: 40, protein: 0, carbs: 0, fat: 4.5 },
+    ],
+    instructions: [
+      "Bate los huevos con las hierbas.",
+      "Cuez en una sartén con aceite.",
+      "Dobla por la mitad y añade queso.",
+      "Sirve inmediatamente."
+    ],
+    prepTime: 3,
+    cookTime: 5,
+    servings: 1,
+    calories: 261,
+    protein: 17,
+    carbs: 2.2,
+    fat: 20.5,
+  {
+    id: "extra-224",
+    name: "Arroz Negro con Sepia",
+    description: "Comida marina, sabrosa y muy completa.",
+    ingredients: [
+      { item: "Arroz", amount: "80g", calories: 280, protein: 6, carbs: 60, fat: 1 },
+  {
+    id: "extra-224",
+    name: "Arroz Negro con Sepia",
+    description: "Comida marina, sabrosa y muy completa.",
+    ingredients: [
+      { item: "Arroz", amount: "80g", calories: 280, protein: 6, carbs: 60, fat: 1 },
+      { item: "Sepia", amount: "100g", calories: 60, protein: 12, carbs: 2, fat: 0.7 },
+      { item: "Tinta de sepia", amount: "5g", calories: 5, protein: 0.5, carbs: 0.5, fat: 0 },
+      { item: "Ajo", amount: "1 diente", calories: 5, protein: 0.2, carbs: 1, fat: 0 },
+    ],
+    instructions: [
+      "Saltea la sepia con el ajo.",
+      "Añade el arroz y la tinta.",
+      "Cuece con caldo durante 20 minutos.",
+      "Sirve caliente."
+    ],
+    prepTime: 10,
+    cookTime: 25,
+    servings: 1,
+    calories: 350,
+    protein: 18.7,
+    carbs: 63.5,
+    fat: 1.7,
+    difficulty: "Media",
+    tags: ["comida", "marisco", "español"],
+    supermarket: "Family Cash",
+    image: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600",
+    mealType: ["comida"],
+  },
+  {
+    id: "extra-225",
+    name: "Boniato Asado con Canela",
+    description: "Cena dulce, reconfortante y muy nutritiva.",
+    ingredients: [
+      { item: "Boniato", amount: "200g", calories: 180, protein: 4, carbs: 41, fat: 0.3 },
+      { item: "Canela", amount: "1 cdta", calories: 5, protein: 0.2, carbs: 1.3, fat: 0 },
+      { item: "Y    { item: "Sepia", amount: "100g", calories: 60, protein: 12, carbs: 2, fat: 0.7 },
+      { item: "Tinta de sepia", amount: "5g", calories: 5, protein: 0.5, carbs: 0.5, fat: 0 },
+      { item: "Ajo", amount: "1 diente", calories: 5, protein: 0.2, carbs: 1, fat: 0 },
+    ],
+    instructions: [
+      "Saltea la sepia con el ajo.",
+      "Añade el arroz y la tinta.",
+      "Cuece con caldo durante 20 minutos.",
+      "Sirve caliente."
+    ],
+    prepTime: 10,
+    cookTime: 25,
+    servings: 1,
+    calories: 350,
+    protein: 18.7,
+    carbs: 63.5,
+    fat: 1.7,
+    difficulty: "Media",
+    tags: ["comida", "marisco", "español"],
+    supermarket: "Family Cash",
+    image: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600",
+    mealType: ["comida"],
+  },
+  {
+    id: "extra-225",
+    name: "Boniato Asado con Canela",
+    description: "Cena dulce, reconfortante y muy nutritiva.",
+    ingredients: [
+      { item: "Boniato", amount: "200g", calories: 180, protein: 4, carbs: 41, fat: 0.3 },
+      { item: "Canela", amount: "1 cdta", calories: 5, protein: 0.2, carbs: 1.3, fat: 0 },
+      { item: "Y{
+    id: "extra-224",
+    name: "Arroz Negro con Sepia",
+    description: "Comida marina, sabrosa y muy completa.",
+    ingredients: [
+      { item: "Arroz", amount: "80g", calories: 280, protein: 6, carbs: 60, fat: 1 },
+      { item: "Sepia", amount: "100g", calories: 60, protein: 12, carbs: 2, fat: 0.7 },
+      { item: "Tinta de sepia", amount: "5g", calories: 5, protein: 0.5, carbs: 0.5, fat: 0 },
+      { item: "Ajo", amount: "1 diente", calories: 5, protein: 0.2, carbs: 1, fat: 0 },
+    ],
+    instructions: [
+      "Saltea la sepia con el ajo.",
+      "Añade el arroz y la tinta.",
+      "Cuece con caldo durante 20 minutos.",
+      "Sirve caliente."
+    ],
+    prepTime: 10,
+    cookTime: 25,
+    servings: 1,
+    calories: 350,
+    protein: 18.7,
+    carbs: 63.5,
+    fat: 1.7,
+    difficulty: "Media",
+    tags: ["comida", "marisco", "español"],
+    supermarket: "Family Cash",
+    image: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600",
+    mealType: ["comida"],
+  },
+  {
+    id: "extra-225",
+    name: "Boniato Asado con Canela",
+    description: "Cena dulce, reconfortante y muy nutritiva.",
+    ingredients: [
+      { item: "Boniato", amount: "200g", calories: 180, protein: 4, carbs: 41, fat: 0.3 },
+      { item: "Canela", amount: "1 cdta", calories: 5, protein: 0.2, carbs: 1.3, fat: 0 },
+      { item: "Y  difficulty: "Fácil",
+    tags: ["desayuno", "alto en proteína", "rápido"],
+    supermarket: "Mercadona",
+    image: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=600",
+    mealType: ["desayuno"],
+  },
+];
