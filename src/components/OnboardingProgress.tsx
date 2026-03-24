@@ -1,84 +1,107 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, ChevronRight, User, Target, Utensils, Scale, Activity } from "lucide-react";
-import { useHaptic } from "@/hooks/useHaptic";
+import { ArrowLeft, Check } from "lucide-react";
+import { Sparkles, User, Scale, Activity, Target, Zap, Utensils, Users, Brain } from "lucide-react";
 
 interface OnboardingProgressProps {
   currentStep: number;
   totalSteps: number;
-  onStepChange?: (step: number) => void;
+  stepLabels: string[];
+  onBack?: () => void;
+  canGoBack: boolean;
 }
 
-const STEPS = [
-  { icon: User, title: "Tu perfil", description: "Datos básicos" },
-  { icon: Activity, title: "Tu objetivo", description: "Meta de peso" },
-  { icon: Utensils, title: "Preferencias", description: "Comidas y restricciones" },
-  { icon: Scale, title: "Listo", description: "Comenzar" },
+const stepIcons = [
+  Sparkles,
+  User,
+  Scale,
+  Activity,
+  Target,
+  Zap,
+  Utensils,
+  Users,
+  Brain,
 ];
 
-export function OnboardingProgress({ currentStep, totalSteps, onStepChange }: OnboardingProgressProps) {
-  const { light } = useHaptic();
+export function OnboardingProgress({
+  currentStep,
+  totalSteps,
+  stepLabels,
+  onBack,
+  canGoBack,
+}: OnboardingProgressProps) {
+  const progress = (currentStep / totalSteps) * 100;
+  const CurrentIcon = stepIcons[currentStep - 1] || Sparkles;
 
   return (
     <div className="space-y-4">
+      {/* Header with step indicator and back button */}
       <div className="flex items-center justify-between">
-        {STEPS.map((step, index) => {
-          const Icon = step.icon;
-          const isActive = index === currentStep;
-          const isCompleted = index < currentStep;
+        <div className="flex items-center gap-3">
+          <motion.div
+            className={`w-12 h-12 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg`}
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+            key={currentStep}
+          >
+            <CurrentIcon className="text-white" />
+          </motion.div>
+          <div>
+            <p className="text-xs text-zinc-400 uppercase tracking-wider">
+              Paso {currentStep} de {totalSteps}
+            </p>
+            <p className="font-semibold">{stepLabels[currentStep - 1] || "Step"}</p>
+          </div>
+        </div>
 
-          return (
-            <motion.button
-              key={index}
-              onClick={() => {
-                if (index <= currentStep) {
-                  light();
-                  onStepChange?.(index);
-                }
-              }}
-              className={`flex flex-col items-center ${
-                index <= currentStep ? "cursor-pointer" : "cursor-not-allowed opacity-50"
-              }`}
-              whileTap={{ scale: 0.95 }}
-            >
-              <motion.div
-                className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-2 transition-colors ${
-                  isCompleted
-                    ? "bg-green-500 text-white"
-                    : isActive
-                    ? "bg-gradient-to-br from-green-400 to-green-600 text-white shadow-lg shadow-green-500/30"
-                    : "bg-white/10 text-zinc-500"
-                }`}
-                animate={isActive ? { scale: [1, 1.1, 1] } : {}}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                {isCompleted ? <Check size={20} /> : <Icon size={20} />}
-              </motion.div>
-              <p className={`text-xs font-medium ${isActive ? "text-green-400" : "text-zinc-500"}`}>
-                {step.title}
-              </p>
-            </motion.button>
-          );
-        })}
+        {canGoBack && onBack && (
+          <motion.button
+            onClick={onBack}
+            className="p-3 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10"
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileTap={{ scale: 0.9 }}
+            aria-label="Volver al paso anterior"
+          >
+            <ArrowLeft size={20} className="text-zinc-400" />
+          </motion.button>
+        )}
       </div>
 
-      {/* Progress bar */}
-      <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+      {/* Animated progress bar with glow */}
+      <div className="relative h-1.5 bg-white/10 rounded-full overflow-hidden">
         <motion.div
-          className="h-full rounded-full bg-gradient-to-r from-green-400 to-emerald-500"
+          className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-400 via-emerald-500 to-green-400 rounded-full"
           initial={{ width: 0 }}
-          animate={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
-          transition={{ duration: 0.3 }}
+          animate={{ width: `${progress}%` }}
+          transition={{ type: "spring", stiffness: 100, damping: 20 }}
+        />
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full blur-sm"
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          style={{ width: `${progress}%` }}
         />
       </div>
 
-      {/* Step counter */}
-      <div className="text-center">
-        <span className="text-sm text-zinc-400">
-          Paso {currentStep + 1} de {totalSteps}
-        </span>
+      {/* Step dots with active animation */}
+      <div className="flex justify-center gap-2">
+        {Array.from({ length: totalSteps }).map((_, i) => (
+          <motion.div
+            key={i}
+            className={`h-2 rounded-full transition-all ${
+              i + 1 === currentStep
+                ? "w-8 bg-gradient-to-r from-green-400 to-emerald-500"
+                : i + 1 < currentStep
+                ? "w-2 bg-green-500"
+                : "w-2 bg-white/20"
+            }`}
+            animate={i + 1 === currentStep ? { scale: [1, 1.2, 1] } : {}}
+            transition={{ duration: 0.3 }}
+          />
+        ))}
       </div>
     </div>
   );

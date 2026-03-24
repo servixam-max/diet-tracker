@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, ChefHat, Clock, Users, Check, Plus, Trash2, ChevronLeft, ChevronRight, Flame } from "lucide-react";
 import { useHaptic } from "@/hooks/useHaptic";
@@ -35,7 +35,7 @@ const mealOptions: Record<string, MealOption[]> = {
   lunch: [
     { id: "l1", name: "Ensalada César con pollo a la plancha", calories: 450, protein: 38, time: "14:00", image: "https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400", selected: false },
     { id: "l2", name: "Bowl de quinoa con vegetales", calories: 420, protein: 15, time: "13:30", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400", selected: false },
-    { id: "l3", name: "Pechuga de pollo con arroz integral", calories: 520, protein: 42, time: "14:00", image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400", selected: false },
+    { id: "l3", name: "Peachuga de pollo con arroz integral", calories: 520, protein: 42, time: "14:00", image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400", selected: false },
     { id: "l4", name: "Salmón al horno con verduras", calories: 480, protein: 40, time: "14:30", image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400", selected: false },
     { id: "l5", name: "Wrap integral de atún y vegetales", calories: 380, protein: 28, time: "13:00", image: "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400", selected: false },
   ],
@@ -52,6 +52,43 @@ interface WeeklyMealPlannerProps {
   userId: string;
 }
 
+// Memoized MealSlot component
+const MealSlot = useMemo(() => function MealSlot({ type, meal, onSelect, onRemove, onLight }: {
+  type: string;
+  meal: MealOption | null;
+  onSelect: () => void;
+  onRemove: () => void;
+  onLight: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      {meal ? (
+        <>
+          <img src={meal.image} alt={meal.name} className="w-10 h-10 rounded-lg object-cover" loading="lazy" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{meal.name}</p>
+            <p className="text-xs text-zinc-500">{meal.calories} kcal</p>
+          </div>
+          <button
+            onClick={onRemove}
+            className="p-1.5 rounded-lg hover:bg-red-500/10 text-zinc-500 hover:text-red-400"
+          >
+            <Trash2 size={14} />
+          </button>
+        </>
+      ) : (
+        <button
+          onClick={onSelect}
+          className="flex-1 py-2 rounded-xl bg-white/5 border border-dashed border-white/10 text-sm text-zinc-500 flex items-center justify-center gap-2 hover:bg-white/10"
+        >
+          <Plus size={14} />
+          {type}
+        </button>
+      )}
+    </div>
+  );
+}, []);
+
 export function WeeklyMealPlanner({ userId }: WeeklyMealPlannerProps) {
   const [currentWeekOffset, setCurrentWeekOffset] = useState(0);
   const [selectedMealType, setSelectedMealType] = useState<string | null>(null);
@@ -59,33 +96,36 @@ export function WeeklyMealPlanner({ userId }: WeeklyMealPlannerProps) {
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const { light, success } = useHaptic();
 
-  // Generate week days
-  const today = new Date();
-  const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - today.getDay() + 1 + (currentWeekOffset * 7));
-  
-  const weekDays: DayPlan[] = [];
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(startOfWeek);
-    date.setDate(startOfWeek.getDate() + i);
-    weekDays.push({
-      day: ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"][i],
-      date,
-      breakfast: i === 0 ? mealOptions.breakfast[0] : null,
-      lunch: i === 0 ? mealOptions.lunch[0] : null,
-      dinner: null,
-      snacks: [],
-    });
-  }
+  // Generate week days - memoized
+  const weekDays = useMemo(() => {
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay() + 1 + (currentWeekOffset * 7));
+    
+    const days: DayPlan[] = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(startOfWeek);
+      date.setDate(startOfWeek.getDate() + i);
+      days.push({
+        day: ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"][i],
+        date,
+        breakfast: i === 0 ? mealOptions.breakfast[0] : null,
+        lunch: i === 0 ? mealOptions.lunch[0] : null,
+        dinner: null,
+        snacks: [],
+      });
+    }
+    return days;
+  }, [currentWeekOffset]);
 
-  function openMealSelector(dayIndex: number, mealType: string) {
+  const openMealSelector = useCallback((dayIndex: number, mealType: string) => {
     light();
     setSelectedDayIndex(dayIndex);
     setSelectedMealType(mealType);
     setShowMealSelector(true);
-  }
+  }, [light]);
 
-  function selectMeal(meal: MealOption) {
+  const selectMeal = useCallback((meal: MealOption) => {
     success();
     const day = weekDays[selectedDayIndex];
     if (selectedMealType === "breakfast") day.breakfast = meal;
@@ -93,27 +133,27 @@ export function WeeklyMealPlanner({ userId }: WeeklyMealPlannerProps) {
     else if (selectedMealType === "dinner") day.dinner = meal;
     setShowMealSelector(false);
     setSelectedMealType(null);
-  }
+  }, [weekDays, selectedDayIndex, selectedMealType, success]);
 
-  function removeMeal(dayIndex: number, mealType: string) {
+  const removeMeal = useCallback((dayIndex: number, mealType: string) => {
     light();
     const day = weekDays[dayIndex];
     if (mealType === "breakfast") day.breakfast = null;
     else if (mealType === "lunch") day.lunch = null;
     else if (mealType === "dinner") day.dinner = null;
-  }
+  }, [weekDays, light]);
 
-  function getTotalCalories(day: DayPlan) {
+  const getTotalCalories = useCallback((day: DayPlan) => {
     let total = 0;
     if (day.breakfast) total += day.breakfast.calories;
     if (day.lunch) total += day.lunch.calories;
     if (day.dinner) total += day.dinner.calories;
     day.snacks.forEach(s => total += s.calories);
     return total;
-  }
+  }, []);
 
-  const weekTotal = weekDays.reduce((acc, day) => acc + getTotalCalories(day), 0);
-  const avgCalories = Math.round(weekTotal / 7);
+  const weekTotal = useMemo(() => weekDays.reduce((acc, day) => acc + getTotalCalories(day), 0), [weekDays, getTotalCalories]);
+  const avgCalories = useMemo(() => Math.round(weekTotal / 7), [weekTotal]);
 
   return (
     <div className="space-y-4">
@@ -131,7 +171,7 @@ export function WeeklyMealPlanner({ userId }: WeeklyMealPlannerProps) {
             <ChevronLeft size={18} className="text-zinc-400" />
           </button>
           <span className="text-sm text-zinc-400 min-w-[80px] text-center">
-            {startOfWeek.toLocaleDateString("es-ES", { month: "short", day: "numeric" })}
+            {weekDays[0]?.date.toLocaleDateString("es-ES", { month: "short", day: "numeric" })}
           </span>
           <button
             onClick={() => { light(); setCurrentWeekOffset(currentWeekOffset + 1); }}
@@ -159,7 +199,7 @@ export function WeeklyMealPlanner({ userId }: WeeklyMealPlannerProps) {
       {/* Days list */}
       <div className="space-y-3 max-h-[400px] overflow-y-auto">
         {weekDays.map((day, dayIndex) => {
-          const isToday = day.date.toDateString() === today.toDateString();
+          const isToday = day.date.toDateString() === new Date().toDateString();
           const total = getTotalCalories(day);
           
           return (
@@ -194,32 +234,9 @@ export function WeeklyMealPlanner({ userId }: WeeklyMealPlannerProps) {
 
               {/* Meals */}
               <div className="space-y-2">
-                {/* Breakfast */}
-                <MealSlot
-                  type="Desayuno"
-                  meal={day.breakfast}
-                  onSelect={() => openMealSelector(dayIndex, "breakfast")}
-                  onRemove={() => removeMeal(dayIndex, "breakfast")}
-                  onLight={light}
-                />
-                
-                {/* Lunch */}
-                <MealSlot
-                  type="Almuerzo"
-                  meal={day.lunch}
-                  onSelect={() => openMealSelector(dayIndex, "lunch")}
-                  onRemove={() => removeMeal(dayIndex, "lunch")}
-                  onLight={light}
-                />
-                
-                {/* Dinner */}
-                <MealSlot
-                  type="Cena"
-                  meal={day.dinner}
-                  onSelect={() => openMealSelector(dayIndex, "dinner")}
-                  onRemove={() => removeMeal(dayIndex, "dinner")}
-                  onLight={light}
-                />
+                <MealSlot type="Desayuno" meal={day.breakfast} onSelect={() => openMealSelector(dayIndex, "breakfast")} onRemove={() => removeMeal(dayIndex, "breakfast")} onLight={light} />
+                <MealSlot type="Almuerzo" meal={day.lunch} onSelect={() => openMealSelector(dayIndex, "lunch")} onRemove={() => removeMeal(dayIndex, "lunch")} onLight={light} />
+                <MealSlot type="Cena" meal={day.dinner} onSelect={() => openMealSelector(dayIndex, "dinner")} onRemove={() => removeMeal(dayIndex, "dinner")} onLight={light} />
               </div>
             </motion.div>
           );
@@ -259,6 +276,7 @@ export function WeeklyMealPlanner({ userId }: WeeklyMealPlannerProps) {
                       src={meal.image}
                       alt={meal.name}
                       className="w-16 h-16 rounded-xl object-cover"
+                      loading="lazy"
                     />
                     <div className="flex-1 text-left">
                       <p className="font-medium">{meal.name}</p>
@@ -275,43 +293,6 @@ export function WeeklyMealPlanner({ userId }: WeeklyMealPlannerProps) {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
-  );
-}
-
-// Meal slot component
-function MealSlot({ type, meal, onSelect, onRemove, onLight }: {
-  type: string;
-  meal: MealOption | null;
-  onSelect: () => void;
-  onRemove: () => void;
-  onLight: () => void;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      {meal ? (
-        <>
-          <img src={meal.image} alt={meal.name} className="w-10 h-10 rounded-lg object-cover" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{meal.name}</p>
-            <p className="text-xs text-zinc-500">{meal.calories} kcal</p>
-          </div>
-          <button
-            onClick={onRemove}
-            className="p-1.5 rounded-lg hover:bg-red-500/10 text-zinc-500 hover:text-red-400"
-          >
-            <Trash2 size={14} />
-          </button>
-        </>
-      ) : (
-        <button
-          onClick={onSelect}
-          className="flex-1 py-2 rounded-xl bg-white/5 border border-dashed border-white/10 text-sm text-zinc-500 flex items-center justify-center gap-2 hover:bg-white/10"
-        >
-          <Plus size={14} />
-          {type}
-        </button>
-      )}
     </div>
   );
 }

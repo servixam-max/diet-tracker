@@ -1,10 +1,10 @@
 "use client";
 
 import { memo, useRef, useState, useCallback } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useHaptic } from "@/hooks/useHaptic";
 import {
-  Camera, RotateCcw, Image, AlertCircle, Sparkles, Loader2,
+  Camera, RotateCcw, Image, AlertCircle, Sparkles, Loader2, ScanLine,
 } from "lucide-react";
 import type { FoodResult, CameraFacing } from "./types";
 
@@ -205,20 +205,61 @@ function CameraTabComponent({ mealType, onResult }: CameraTabProps) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-      {/* Camera preview area */}
+      {/* Camera preview area with guides */}
       <div className="relative rounded-2xl overflow-hidden bg-black aspect-video">
         {isCameraActive ? (
           <>
             <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+            
+            {/* Center alignment guides */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute inset-0 border-2 border-white/20 rounded-2xl" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-3/4 h-1/2 border-2 border-white/30 rounded-xl" />
+              </div>
+              <div className="absolute inset-x-0 top-1/3 border-t border-white/10" />
+              <div className="absolute inset-x-0 bottom-1/3 border-b border-white/10" />
+            </div>
+            
+            <div className="absolute inset-x-0 top-0 p-4 bg-gradient-to-b from-black/80 to-transparent">
+              <div className="flex items-center justify-center gap-2">
+                <ScanLine size={16} className="text-green-400" />
+                <p className="text-white text-sm font-medium">Centra la comida en el marco</p>
+              </div>
+            </div>
+            
             <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
               <div className="flex items-center justify-center gap-6">
-                <motion.button onClick={switchCamera} className="p-3 rounded-full bg-white/20 backdrop-blur-sm" whileTap={{ scale: 0.9 }}>
+                <motion.button 
+                  onClick={switchCamera} 
+                  className="p-3 rounded-full bg-white/20 backdrop-blur-sm" 
+                  whileTap={{ scale: 0.9 }}
+                >
                   <RotateCcw size={24} className="text-white" />
                 </motion.button>
-                <motion.button onClick={capturePhoto} className="p-4 rounded-full bg-white shadow-lg" whileTap={{ scale: 0.9 }}>
-                  <div className="w-12 h-12 rounded-full bg-green-500 border-4 border-white" />
+                
+                {/* Animated capture button */}
+                <motion.button 
+                  onClick={capturePhoto} 
+                  className="relative p-4 rounded-full bg-white shadow-lg"
+                  whileTap={{ scale: 0.85 }}
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <motion.div 
+                    className="w-14 h-14 rounded-full bg-gradient-to-r from-green-400 to-emerald-500"
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-white/90" />
+                  </div>
                 </motion.button>
-                <motion.button onClick={() => fileInputRef.current?.click()} className="p-3 rounded-full bg-white/20 backdrop-blur-sm" whileTap={{ scale: 0.9 }}>
+                
+                <motion.button 
+                  onClick={() => fileInputRef.current?.click()} 
+                  className="p-3 rounded-full bg-white/20 backdrop-blur-sm" 
+                  whileTap={{ scale: 0.9 }}
+                >
                   <Image size={24} className="text-white" />
                 </motion.button>
               </div>
@@ -236,7 +277,16 @@ function CameraTabComponent({ mealType, onResult }: CameraTabProps) {
               </>
             ) : (
               <>
-                <Camera size={48} className="text-zinc-500 mb-4" />
+                <div className="relative mb-6">
+                  <Camera size={64} className="text-zinc-500" />
+                  <motion.div
+                    className="absolute inset-0 flex items-center justify-center"
+                    animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    <div className="w-16 h-16 rounded-full border-2 border-green-400/30" />
+                  </motion.div>
+                </div>
                 <p className="text-zinc-400 text-center mb-4">Activa la cámara para hacer una foto de tu comida</p>
                 <motion.button onClick={() => startCamera()} className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white font-bold shadow-lg" whileTap={{ scale: 0.95 }}>
                   Activar cámara
@@ -248,7 +298,7 @@ function CameraTabComponent({ mealType, onResult }: CameraTabProps) {
       </div>
 
       {/* Hidden file input for gallery */}
-      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
+      <input ref={fileInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileSelect} className="hidden" />
 
       {/* AI Error message */}
       {aiError && (

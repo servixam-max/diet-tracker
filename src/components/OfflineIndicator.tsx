@@ -1,92 +1,90 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Wifi, WifiOff, RefreshCw, Check } from "lucide-react";
+import { useEffect, useState } from 'react';
 
-interface OfflineIndicatorProps {
-  isOnline: boolean;
-  isSyncing?: boolean;
-  hasPendingSync?: boolean;
-  lastSynced?: Date | null;
-}
-
-export function OfflineIndicator({ isOnline, isSyncing, hasPendingSync, lastSynced }: OfflineIndicatorProps) {
-  const [showReconnected, setShowReconnected] = useState(false);
-  const [wasOffline, setWasOffline] = useState(false);
+export function OfflineIndicator() {
+  const [isOnline, setIsOnline] = useState(true);
+  const [syncPending, setSyncPending] = useState(false);
 
   useEffect(() => {
-    if (!isOnline) {
-      setWasOffline(true);
-    } else if (wasOffline && isOnline) {
-      setShowReconnected(true);
-      setWasOffline(false);
-      setTimeout(() => setShowReconnected(false), 3000);
-    }
-  }, [isOnline, wasOffline]);
+    const handleOnline = () => {
+      setIsOnline(true);
+      // Check if there are pending sync operations
+      checkSyncPending();
+    };
+    
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
 
-  // Don't show if online and no pending sync
-  if (isOnline && !hasPendingSync && !showReconnected) {
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Initialize state
+    setIsOnline(navigator.onLine);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const checkSyncPending = async () => {
+    // Check IndexedDB for pending sync operations
+    try {
+      const db = await openDB();
+      const tx = db.transaction('sync_queue', 'readonly');
+      const store = tx.objectStore('sync_queue');
+      const countRequest = store.count();
+      await new Promise<void>((resolve) => {
+        countRequest.onsuccess = () => {
+          setSyncPending(countRequest.result > 0);
+          resolve();
+        };
+        countRequest.onerror = () => {
+          setSyncPending(false);
+          resolve();
+        };
+      });
+    } catch (e) {
+      setSyncPending(false);
+    }
+  };
+
+  // Import openDB from our db module
+  async function openDB(): Promise<IDBDatabase> {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('diet_tracker', 1);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        if (!db.objectStoreNames.contains('sync_queue')) {
+          db.createObjectStore('sync_queue', { keyPath: 'id', autoIncrement: true });
+        }
+      };
+    });
+  }
+
+  if (isOnline && !syncPending) {
     return null;
   }
 
   return (
-    <AnimatePresence>
+    <div className={`fixed top-0 left-0 right-0 z-50 p-2 text-center text-sm font-medium ${
+      !isOnline ? 'bg-red-500 text-white' : 'bg-amber-500 text-white'
+    }`}>
       {!isOnline && (
-        <motion.div
-          className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-yellow-500 to-orange-500 px-4 py-2"
-          initial={{ y: -100 }}
-          animate={{ y: 0 }}
-          exit={{ y: -100 }}
-        >
-          <div className="flex items-center justify-center gap-2 text-white text-sm font-medium">
-            <WifiOff size={16} />
-            <span>Sin conexión - Los datos se guardarán localmente</span>
-          </div>
-        </motion.div>
+        <span>
+          📡 You are offline - changes will sync when reconnected
+        </span>
       )}
-
-      {showReconnected && (
-        <motion.div
-          className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-green-500 to-emerald-500 px-4 py-2"
-          initial={{ y: -100 }}
-          animate={{ y: 0 }}
-          exit={{ y: -100 }}
-        >
-          <div className="flex items-center justify-center gap-2 text-white text-sm font-medium">
-            <Wifi size={16} />
-            <span>¡Vuelta a conectada! Sincronizando...</span>
-          </div>
-        </motion.div>
+      {isOnline && syncPending && (
+        <span className="flex items-center justify-center gap-2">
+          <span className="animate-spin">⏳</span>
+          Syncing pending changes...
+        </span>
       )}
-
-      {isOnline && hasPendingSync && (
-        <motion.div
-          className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-2"
-          initial={{ y: -100 }}
-          animate={{ y: 0 }}
-          exit={{ y: -100 }}
-        >
-          <div className="flex items-center justify-center gap-2 text-white text-sm font-medium">
-            {isSyncing ? (
-              <>
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity }}
-                >
-                  <RefreshCw size={16} />
-                </motion.div>
-                <span>Sincronizando datos...</span>
-              </>
-            ) : (
-              <>
-                <RefreshCw size={16} />
-                <span>Datos pendientes de sincronizar</span>
-              </>
-            )}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    </div>
   );
 }

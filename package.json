@@ -10,7 +10,8 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.9.0",

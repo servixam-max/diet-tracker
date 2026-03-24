@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart, Plus, Check, Trash2, Copy, Share2 } from "lucide-react";
+import { ShoppingCart, Plus, Check, Trash2, Copy, Share2, Pencil } from "lucide-react";
 import { useHaptic } from "@/hooks/useHaptic";
 
 interface ShoppingItem {
@@ -27,7 +27,7 @@ export function ShoppingList({ userId }: ShoppingListProps) {
   ]);
   const [showAdd, setShowAdd] = useState(false);
   const [newItem, setNewItem] = useState({ name: "", quantity: "", category: "Otros" });
-  const { light, success } = useHaptic();
+  const { light, medium, warning } = useHaptic();
 
   function toggleItem(id: string) {
     light();
@@ -50,7 +50,6 @@ export function ShoppingList({ userId }: ShoppingListProps) {
     setItems([...items, item]);
     setNewItem({ name: "", quantity: "", category: "Otros" });
     setShowAdd(false);
-    success();
   }
 
   function removeItem(id: string) {
@@ -65,7 +64,6 @@ export function ShoppingList({ userId }: ShoppingListProps) {
       .map(item => `☐ ${item.name} (${item.quantity})`)
       .join("\n");
     navigator.clipboard.writeText(text);
-    success();
   }
 
   const categories = [...new Set(items.map(item => item.category))];
@@ -92,43 +90,17 @@ export function ShoppingList({ userId }: ShoppingListProps) {
                 {items
                   .filter(item => item.category === category)
                   .map((item, index) => (
-                    <motion.div
+                    <SwipeableShoppingItem
                       key={item.id}
-                      className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
-                        item.checked 
-                          ? "bg-green-500/5 border border-green-500/20" 
-                          : "bg-white/5 border border-white/5"
-                      }`}
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <button
-                        onClick={() => toggleItem(item.id)}
-                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                          item.checked 
-                            ? "bg-green-500 border-green-500" 
-                            : "border-zinc-600 hover:border-green-500"
-                        }`}
-                      >
-                        {item.checked && <Check size={14} className="text-white" />}
-                      </button>
-                      
-                      <div className="flex-1">
-                        <p className={`font-medium ${item.checked ? "line-through text-zinc-500" : ""}`}>
-                          {item.name}
-                        </p>
-                        <p className="text-xs text-zinc-500">{item.quantity}</p>
-                      </div>
-
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        className="p-1.5 rounded-lg hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition-colors"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </motion.div>
+                      item={item}
+                      index={index}
+                      onToggle={() => toggleItem(item.id)}
+                      onEdit={() => {}}
+                      onDelete={() => removeItem(item.id)}
+                      light={light}
+                      medium={medium}
+                      warning={warning}
+                    />
                   ))}
               </AnimatePresence>
             </div>
@@ -213,4 +185,111 @@ export function ShoppingList({ userId }: ShoppingListProps) {
       </div>
     </div>
   );
+}
+
+function SwipeableShoppingItem({ item, index, onToggle, onEdit, onDelete, light, medium, warning }: {
+  item: ShoppingItem;
+  index: number;
+  onToggle: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  light: () => void;
+  medium: () => void;
+  warning: () => void;
+}) {
+  const [dragOffset, setDragOffset] = useState(0);
+
+  return (
+    <div className="relative overflow-hidden rounded-xl">
+      {/* Swipe actions background */}
+      <div className="absolute inset-0 flex">
+        {/* Edit action (right swipe - blue) */}
+        <motion.div 
+          className="flex-1 bg-blue-500/20 flex items-center justify-start pl-4"
+          initial={{ x: "-100%" }}
+        >
+          <motion.button
+            className="flex items-center gap-2 text-blue-400 text-sm"
+            whileTap={{ scale: 0.95 }}
+            onClick={(e) => { e.stopPropagation(); medium(); onEdit(); }}
+          >
+            <Pencil size={16} />
+            Editar
+          </motion.button>
+        </motion.div>
+        
+        {/* Delete action (left swipe - red) */}
+        <motion.div 
+          className="flex-1 bg-red-500/20 flex items-center justify-end pr-4"
+          initial={{ x: "100%" }}
+        >
+          <motion.button
+            className="flex items-center gap-2 text-red-400 text-sm"
+            whileTap={{ scale: 0.95 }}
+            onClick={(e) => { e.stopPropagation(); warning(); onDelete(); }}
+          >
+            Eliminar
+            <Trash2 size={16} />
+          </motion.button>
+        </motion.div>
+      </div>
+
+      {/* Main item content */}
+      <motion.div
+        className={`flex items-center gap-3 p-3 rounded-xl transition-all cursor-grab active:cursor-grabbing ${
+          item.checked 
+            ? "bg-green-500/5 border border-green-500/20" 
+            : "bg-white/5 border border-white/5"
+        }`}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, x: 20 }}
+        transition={{ delay: index * 0.05 }}
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.2}
+        onDrag={(e, info) => setDragOffset(info.offset.x)}
+        onDragEnd={(e, info) => {
+          if (info.offset.x > 80) {
+            medium();
+            onEdit();
+          } else if (info.offset.x < -80) {
+            warning();
+            onDelete();
+          }
+          setDragOffset(0);
+        }}
+        style={{ x: dragOffset }}
+      >
+        <button
+          onClick={() => { light(); onToggle(); }}
+          className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+            item.checked 
+              ? "bg-green-500 border-green-500" 
+              : "border-zinc-600 hover:border-green-500"
+          }`}
+        >
+          {item.checked && <Check size={14} className="text-white" />}
+        </button>
+        
+        <div className="flex-1">
+          <p className={`font-medium ${item.checked ? "line-through text-zinc-500" : ""}`}>
+            {item.name}
+          </p>
+          <p className="text-xs text-zinc-500">{item.quantity}</p>
+        </div>
+
+        <button
+          onClick={(e) => { e.stopPropagation(); light(); removeItem(item.id); }}
+          className="p-1.5 rounded-lg hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition-colors"
+        >
+          <Trash2 size={14} />
+        </button>
+      </motion.div>
+    </div>
+  );
+}
+
+function removeItem(id: string) {
+  // This is handled by the parent component
 }

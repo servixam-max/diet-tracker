@@ -4,7 +4,7 @@ import { memo, useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useHaptic } from "@/hooks/useHaptic";
 import {
-  Barcode, Search, Loader2, RotateCcw, X,
+  Barcode, Search, Loader2, RotateCcw, X, Check,
 } from "lucide-react";
 import type { FoodResult, CameraFacing } from "./types";
 
@@ -22,6 +22,7 @@ function BarcodeTabComponent({ mealType, onResult }: BarcodeTabProps) {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<CameraFacing>("environment");
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const [scannedProduct, setScannedProduct] = useState<FoodResult | null>(null);
 
   const stopCamera = useCallback(() => {
     if (stream) {
@@ -61,7 +62,7 @@ function BarcodeTabComponent({ mealType, onResult }: BarcodeTabProps) {
       const response = await fetch(`/api/barcode-lookup?barcode=${barcodeInput}`);
       if (response.ok) {
         const data = await response.json();
-        onResult({
+        const result: FoodResult = {
           description: data.name,
           calories: data.calories,
           protein_g: data.protein,
@@ -69,7 +70,8 @@ function BarcodeTabComponent({ mealType, onResult }: BarcodeTabProps) {
           fat_g: data.fat,
           meal_type: mealType,
           confidence: data.found ? 1 : 0.5,
-        });
+        };
+        setScannedProduct(result);
         success();
       }
     } catch (error) {
@@ -77,7 +79,15 @@ function BarcodeTabComponent({ mealType, onResult }: BarcodeTabProps) {
     } finally {
       setIsScanning(false);
     }
-  }, [barcodeInput, mealType, onResult, success]);
+  }, [barcodeInput, mealType, success]);
+
+  const handleAddToLog = useCallback(() => {
+    if (scannedProduct) {
+      onResult(scannedProduct);
+      setScannedProduct(null);
+      setBarcodeInput("");
+    }
+  }, [scannedProduct, onResult]);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
@@ -123,6 +133,48 @@ function BarcodeTabComponent({ mealType, onResult }: BarcodeTabProps) {
           </div>
         )}
       </div>
+
+      {/* Product info after scan */}
+      {scannedProduct && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 rounded-2xl bg-green-500/20 border border-green-500/30"
+        >
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <p className="text-green-400 text-sm font-medium">Producto detectado</p>
+              <p className="text-white font-semibold">{scannedProduct.description}</p>
+            </div>
+            <Check size={20} className="text-green-400" />
+          </div>
+          <div className="grid grid-cols-4 gap-2 mb-3">
+            <div className="text-center p-2 rounded-xl bg-white/5">
+              <p className="text-xs text-zinc-400">Cal</p>
+              <p className="text-sm font-bold text-white">{scannedProduct.calories}</p>
+            </div>
+            <div className="text-center p-2 rounded-xl bg-white/5">
+              <p className="text-xs text-zinc-400">Prot</p>
+              <p className="text-sm font-bold text-blue-400">{scannedProduct.protein_g}g</p>
+            </div>
+            <div className="text-center p-2 rounded-xl bg-white/5">
+              <p className="text-xs text-zinc-400">Carb</p>
+              <p className="text-sm font-bold text-yellow-400">{scannedProduct.carbs_g}g</p>
+            </div>
+            <div className="text-center p-2 rounded-xl bg-white/5">
+              <p className="text-xs text-zinc-400">Gras</p>
+              <p className="text-sm font-bold text-red-400">{scannedProduct.fat_g}g</p>
+            </div>
+          </div>
+          <motion.button
+            onClick={handleAddToLog}
+            className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white font-bold"
+            whileTap={{ scale: 0.98 }}
+          >
+            Añadir al registro
+          </motion.button>
+        </motion.div>
+      )}
 
       {/* Manual barcode input */}
       <div className="flex gap-2">

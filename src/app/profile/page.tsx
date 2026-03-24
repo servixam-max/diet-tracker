@@ -5,6 +5,11 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { User, LogOut, Target, Award, Shield, Settings } from "lucide-react";
+import { WeightChart } from "@/components/WeightChart";
+import { BodyMeasurements } from "@/components/BodyMeasurements";
+import { ProgressPhotos } from "@/components/ProgressPhotos";
+import { AchievementBadge } from "@/components/AchievementBadge";
+import { StreakCounter } from "@/components/StreakCounter";
 
 export default function ProfilePage() {
   const [mounted, setMounted] = useState(false);
@@ -14,7 +19,6 @@ export default function ProfilePage() {
 
   useEffect(() => {
     setMounted(true);
-    // Check if demo mode
     const demoMode = localStorage.getItem("demo-mode") === "true";
     setIsDemo(demoMode);
   }, []);
@@ -31,7 +35,6 @@ export default function ProfilePage() {
     router.push("/login");
   }
 
-  // Show loading state
   if (!mounted || loading) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -44,14 +47,12 @@ export default function ProfilePage() {
     );
   }
 
-  // Demo mode profile
   if (isDemo || !user) {
     return (
       <div className="h-full flex flex-col relative overflow-hidden">
         <div className="absolute inset-0 bg-mesh pointer-events-none" />
         
         <div className="relative flex-1 overflow-y-auto no-scrollbar px-5 pb-4">
-          {/* Header */}
           <motion.header 
             className="pt-8 pb-6"
             initial={{ opacity: 0, y: -20 }}
@@ -63,7 +64,6 @@ export default function ProfilePage() {
             </span>
           </motion.header>
 
-          {/* Profile card */}
           <motion.div 
             className="relative p-6 rounded-3xl overflow-hidden mb-6"
             initial={{ opacity: 0, y: 20 }}
@@ -88,7 +88,6 @@ export default function ProfilePage() {
             </div>
           </motion.div>
 
-          {/* Demo notice */}
           <motion.div 
             className="p-4 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 mb-6"
             initial={{ opacity: 0, y: 20 }}
@@ -106,7 +105,6 @@ export default function ProfilePage() {
             </div>
           </motion.div>
 
-          {/* Demo stats */}
           <motion.div 
             className="grid grid-cols-2 gap-3 mb-6"
             initial={{ opacity: 0, y: 20 }}
@@ -129,7 +127,14 @@ export default function ProfilePage() {
             </div>
           </motion.div>
 
-          {/* Settings placeholder */}
+          <div className="space-y-6">
+            <WeightChart currentWeight={75} targetWeight={70} />
+            <StreakCounter userId="demo" />
+            <AchievementBadge userId="demo" />
+            <ProgressPhotos userId="demo" />
+            <BodyMeasurements userId="demo" />
+          </div>
+
           <motion.div
             className="p-6 rounded-2xl glass-card mb-6"
             initial={{ opacity: 0, y: 20 }}
@@ -148,7 +153,6 @@ export default function ProfilePage() {
             </div>
           </motion.div>
 
-          {/* Go to login */}
           <motion.button 
             onClick={() => router.push("/login")}
             className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl bg-green-500/20 border border-green-500/30 text-green-400 font-medium mb-3"
@@ -164,7 +168,6 @@ export default function ProfilePage() {
     );
   }
 
-  // Real user profile
   return (
     <div className="h-full flex flex-col relative overflow-hidden">
       <div className="absolute inset-0 bg-mesh pointer-events-none" />
@@ -201,6 +204,14 @@ export default function ProfilePage() {
             </div>
           </div>
         </motion.div>
+
+        <div className="space-y-6 mb-6">
+          <WeightChart currentWeight={75} targetWeight={70} />
+          <StreakCounter userId={user.id || "user"} />
+          <AchievementBadge userId={user.id || "user"} />
+          <ProgressPhotos userId={user.id || "user"} />
+          <BodyMeasurements userId={user.id || "user"} />
+        </div>
 
         <motion.button 
           onClick={handleLogout}

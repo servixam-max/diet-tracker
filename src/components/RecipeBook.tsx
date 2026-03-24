@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -16,6 +17,7 @@ interface RecipeBookProps {
 }
 
 export function RecipeBook({ userId, onAddToMealPlan, onAddToShoppingList }: RecipeBookProps) {
+  const router = useRouter();
   const [allRecipes] = useState<Recipe[]>(RECIPES);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -287,7 +289,7 @@ ${recipe.ingredients.map(i => `• ${i.item} (${i.amount})`).join("\n")}`;
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: Math.min(index * 0.03, 0.3) }}
-              onClick={() => { light(); setSelectedRecipe(recipe); }}
+              onClick={() => { light(); router.push(`/recipes/${recipe.id}`); }}
               whileTap={{ scale: 0.98 }}
             >
               <div className="aspect-[4/3] relative">

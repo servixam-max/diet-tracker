@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence, useSpring } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
+import { Bell } from "lucide-react";
 
 const navItems = [
   { 
@@ -268,6 +269,7 @@ function NavItem({ item, isActive, index }: { item: typeof navItems[0], isActive
 }
 
 export function BottomNavBar() {
+  const router = useRouter();
   const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollY = useRef(0);
@@ -312,6 +314,16 @@ export function BottomNavBar() {
           background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.1) 20%, rgba(255, 255, 255, 0.1) 80%, transparent 100%)',
         }}
       />
+      
+      {/* Notification bell button */}
+      <motion.button
+        onClick={() => router.push("/dashboard")}
+        className="absolute right-4 top-2 p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20"
+        whileTap={{ scale: 0.9 }}
+        aria-label="Notificaciones"
+      >
+        <Bell size={18} className="text-white" />
+      </motion.button>
       
       {/* Navigation content */}
       <div className="relative flex items-center justify-around h-16 px-2">

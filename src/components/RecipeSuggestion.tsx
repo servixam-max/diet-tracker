@@ -233,15 +233,9 @@ export function RecipeSuggestion({ userId }: RecipeSuggestionProps) {
   async function generateNewRecipes() {
     setIsLoading(true);
     light();
-    
-    // Simulate AI generation delay
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Shuffle and pick 3 random recipes
     const shuffled = [...allRecipes].sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, 3);
-    setRecipes(selected);
-    
+    setRecipes(shuffled.slice(0, 3));
     setIsLoading(false);
     success();
   }
@@ -363,7 +357,6 @@ export function RecipeSuggestion({ userId }: RecipeSuggestionProps) {
                         {recipe.calories} kcal
                       </span>
                       <span>{recipe.protein}g P</span>
-                      <span>{recipe.protein + recipe.carbs + recipe.fat > 0 ? Math.round((recipe.protein / (recipe.protein + recipe.carbs + recipe.fat)) * 100) : 0}% proteína</span>
                     </div>
                     <div className="flex gap-1 mt-2">
                       {recipe.tags.slice(0, 2).map((tag, i) => (
@@ -380,7 +373,6 @@ export function RecipeSuggestion({ userId }: RecipeSuggestionProps) {
         )}
       </AnimatePresence>
 
-      {/* Recipe detail modal */}
       <AnimatePresence>
         {showDetails && (
           <motion.div
@@ -446,13 +438,6 @@ export function RecipeSuggestion({ userId }: RecipeSuggestionProps) {
                     <Users size={14} />
                     {showDetails.servings} personas
                   </span>
-                  <span className={`px-2 py-0.5 rounded text-xs ${
-                    showDetails.difficulty === "Fácil" ? "bg-green-500/10 text-green-400" :
-                    showDetails.difficulty === "Media" ? "bg-yellow-500/10 text-yellow-400" :
-                    "bg-red-500/10 text-red-400"
-                  }`}>
-                    {showDetails.difficulty}
-                  </span>
                 </div>
 
                 <p className="text-zinc-400">{showDetails.description}</p>
@@ -483,20 +468,18 @@ export function RecipeSuggestion({ userId }: RecipeSuggestionProps) {
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  <motion.button
-                    onClick={() => toggleLike(showDetails.id)}
-                    className={`flex-1 py-3 rounded-xl font-medium flex items-center justify-center gap-2 ${
-                      showDetails.liked
-                        ? "bg-red-500/20 text-red-400 border border-red-500/40"
-                        : "bg-white/5 border border-white/10"
-                    }`}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Heart size={18} className={showDetails.liked ? "fill-current" : ""} />
-                    {showDetails.liked ? "Me gusta" : "Añadir a favoritos"}
-                  </motion.button>
-                </div>
+                <motion.button
+                  onClick={() => toggleLike(showDetails.id)}
+                  className={`w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 ${
+                    showDetails.liked
+                      ? "bg-red-500/20 text-red-400 border border-red-500/40"
+                      : "bg-white/5 border border-white/10"
+                  }`}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Heart size={18} className={showDetails.liked ? "fill-current" : ""} />
+                  {showDetails.liked ? "Me gusta" : "Añadir a favoritos"}
+                </motion.button>
               </div>
             </motion.div>
           </motion.div>

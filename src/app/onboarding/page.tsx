@@ -1,24 +1,18 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/components/AuthProvider";
+import { OnboardingProgress } from "@/components/OnboardingProgress";
+import { OnboardingComplete } from "@/components/OnboardingComplete";
 import { calculateBMR, calculateTDEE, calculateDailyCalories, distributeMacros, activityLabels, goalLabels, goalDescriptions, activityDescriptions, speedLabels, type Gender, type ActivityLevel, type Goal, type Speed } from "@/lib/nutrition/calculations";
 import Particles from "@tsparticles/react";
 import { initParticlesEngine } from "@tsparticles/react";
 import { loadSlim } from "@tsparticles/slim";
-import confetti from "canvas-confetti";
-import { ArrowRight, ArrowLeft, Check, Sparkles, Scale, Ruler, Activity, Target, Zap, Utensils, Users, Brain, Heart, Flame, Trophy, Sun, Moon, Star } from "lucide-react";
+import { ArrowRight, Check, Sparkles, Scale, Ruler, Activity, Target, Zap, Utensils, Users, Brain, Flame, Heart } from "lucide-react";
 import { validateField, validators } from "@/lib/validation";
 import { logger } from "@/lib/logger";
-
-// User Icon
-const UserIcon = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-  </svg>
-);
 
 interface OnboardingData {
   name: string;
@@ -43,17 +37,18 @@ const restrictionOptions = [
 ];
 
 const stepConfig = [
-  { icon: Sparkles, color: "green", gradient: "from-green-400 to-emerald-500", label: "Bienvenida" },
-  { icon: UserIcon, color: "blue", gradient: "from-blue-400 to-cyan-500", label: "Sobre ti" },
-  { icon: Scale, color: "purple", gradient: "from-purple-400 to-pink-500", label: "Medidas" },
-  { icon: Activity, color: "orange", gradient: "from-orange-400 to-red-500", label: "Actividad" },
-  { icon: Target, color: "red", gradient: "from-red-400 to-rose-500", label: "Objetivo" },
-  { icon: Zap, color: "yellow", gradient: "from-yellow-400 to-amber-500", label: "Intensidad" },
-  { icon: Utensils, color: "pink", gradient: "from-pink-400 to-rose-500", label: "Dietas" },
-  { icon: Users, color: "cyan", gradient: "from-cyan-400 to-teal-500", label: "Comensales" },
-  { icon: Brain, color: "indigo", gradient: "from-indigo-400 to-violet-500", label: "Tu plan" },
+  { icon: Sparkles, color: "green", gradient: "from-green-400 to-emerald-500", label: "Bienvenida", required: true },
+  { icon: Sparkles, color: "blue", gradient: "from-blue-400 to-cyan-500", label: "Sobre ti", required: true },
+  { icon: Scale, color: "purple", gradient: "from-purple-400 to-pink-500", label: "Medidas", required: true },
+  { icon: Activity, color: "orange", gradient: "from-orange-400 to-red-500", label: "Actividad", required: true },
+  { icon: Target, color: "red", gradient: "from-red-400 to-rose-500", label: "Objetivo", required: true },
+  { icon: Zap, color: "yellow", gradient: "from-yellow-400 to-amber-500", label: "Intensidad", required: true },
+  { icon: Utensils, color: "pink", gradient: "from-pink-400 to-rose-500", label: "Dietas", required: false },
+  { icon: Users, color: "cyan", gradient: "from-cyan-400 to-teal-500", label: "Comensales", required: true },
+  { icon: Brain, color: "indigo", gradient: "from-indigo-400 to-violet-500", label: "Tu plan", required: true },
 ];
 
+const stepLabels = stepConfig.map(s => s.label);
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1);
@@ -72,29 +67,19 @@ export default function OnboardingPage() {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [completed, setCompleted] = useState(false);
   const router = useRouter();
   const { user, refreshUser } = useAuth();
 
   const totalSteps = 9;
-  const progress = step / totalSteps;
 
-  // 3D card animation values
-  const rotateX = useMotionValue(0);
-  const rotateY = useMotionValue(0);
-  const springConfig = { stiffness: 200, damping: 25 };
+  // Calculate live preview
+  const bmr = calculateBMR(data.weight, data.height, data.age, data.gender);
+  const tdee = calculateTDEE(bmr, data.activityLevel);
+  const dailyCalories = calculateDailyCalories(tdee, data.goal, data.speed);
+  const macros = distributeMacros(dailyCalories, data.goal, data.weight);
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 24,
-      },
-    },
-  };
+  const currentConfig = stepConfig[step - 1];
 
   useEffect(() => {
     initParticlesEngine(async (engine) => {
@@ -106,15 +91,14 @@ export default function OnboardingPage() {
     if (!user && step === 1) {
       router.push("/login");
     }
-    // Load existing profile data when regenerating onboarding
     if (user) {
       setData(prev => ({
         ...prev,
         name: user.name || prev.name,
         age: user.age || prev.age,
         gender: (user.gender || prev.gender) as Gender,
-        weight: user.weight_kg || prev.weight,
-        height: user.height_cm || prev.height,
+        weight_kg: user.weight_kg || prev.weight,
+        height_cm: user.height_cm || prev.height,
         activityLevel: (user.activity_level || prev.activityLevel) as ActivityLevel,
         goal: (user.goal || prev.goal) as Goal,
         speed: (user.speed || prev.speed) as Speed,
@@ -135,15 +119,18 @@ export default function OnboardingPage() {
     if (step > 1) setStep(step - 1);
   }
 
+  function handleSkip() {
+    // Skip optional steps (step 7 - dietary restrictions)
+    if (step === 7) {
+      next();
+    }
+  }
+
   async function handleFinish() {
     setSaving(true);
     setError("");
 
     try {
-      const bmr = calculateBMR(data.weight, data.height, data.age, data.gender);
-      const tdee = calculateTDEE(bmr, data.activityLevel);
-      const dailyCalories = calculateDailyCalories(tdee, data.goal, data.speed);
-
       const response = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -167,32 +154,41 @@ export default function OnboardingPage() {
         throw new Error(err.error || "Error al guardar");
       }
 
-      // Celebration confetti
-      confetti({
-        particleCount: 150,
-        spread: 100,
-        origin: { y: 0.6 },
-        colors: ["#22c55e", "#4ade80", "#86efac", "#a855f7", "#ec4899"],
-      });
-
       await refreshUser();
-      setTimeout(() => router.push("/dashboard"), 1500);
+      setCompleted(true);
     } catch (err: any) {
       console.error("Onboarding save error:", err);
-      setError(err.message || "Error al guardar. Revisa la consola para detalles.");
+      setError(err.message || "Error al guardar");
     } finally {
       setSaving(false);
     }
   }
 
-  // Calculate live preview
-  const bmr = calculateBMR(data.weight, data.height, data.age, data.gender);
-  const tdee = calculateTDEE(bmr, data.activityLevel);
-  const dailyCalories = calculateDailyCalories(tdee, data.goal, data.speed);
-  const macros = distributeMacros(dailyCalories, data.goal, data.weight);
+  function handleStartTracking() {
+    router.push("/dashboard");
+  }
 
-  const currentConfig = stepConfig[step - 1];
-  const CurrentIcon = currentConfig?.icon || Sparkles;
+  // Validation functions
+  function validateStep(): boolean {
+    switch (step) {
+      case 2: // Name, age, gender
+        return data.name.length > 0 && data.age >= 15 && data.age <= 80;
+      case 3: // Weight, height
+        return data.weight >= 40 && data.weight <= 200 && data.height >= 140 && data.height <= 220;
+      case 4: // Activity level
+        return !!data.activityLevel;
+      case 5: // Goal
+        return !!data.goal;
+      case 6: // Speed
+        return !!data.speed;
+      case 8: // Servings
+        return data.servings >= 1 && data.servings <= 6;
+      default:
+        return true;
+    }
+  }
+
+  const canProceed = validateStep();
 
   return (
     <div className="h-full flex flex-col relative overflow-hidden">
@@ -233,82 +229,25 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      {/* Header with progress */}
+      {/* Header with OnboardingProgress component */}
       <motion.header className="relative px-5 pt-6 pb-4 z-10">
-        {/* Step indicator with morphing progress */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <motion.div
-              className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${currentConfig?.gradient} flex items-center justify-center shadow-lg`}
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", stiffness: 200, damping: 15 }}
-              key={step}
-            >
-              <CurrentIcon className="text-white" />
-            </motion.div>
-            <div>
-              <p className="text-xs text-zinc-400 uppercase tracking-wider">Paso {step} de {totalSteps}</p>
-              <p className="font-semibold">{currentConfig?.label}</p>
-            </div>
-          </div>
-
-          {step > 1 && (
-            <motion.button
-              onClick={prev}
-              className="p-3 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10"
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <ArrowLeft size={20} className="text-zinc-400" />
-            </motion.button>
-          )}
-        </div>
-
-        {/* Animated progress bar with glow */}
-        <div className="relative h-1.5 bg-white/10 rounded-full overflow-hidden">
-          <motion.div
-            className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-400 via-emerald-500 to-green-400 rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: `${progress * 100}%` }}
-            transition={{ type: "spring", stiffness: 100, damping: 20 }}
-          />
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full blur-sm"
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-            style={{ width: `${progress * 100}%` }}
-          />
-        </div>
-
-        {/* Step dots with active animation */}
-        <div className="flex justify-center gap-2 mt-4">
-          {Array.from({ length: totalSteps }).map((_, i) => (
-            <motion.div
-              key={i}
-              className={`h-2 rounded-full transition-all ${
-                i + 1 === step
-                  ? "w-8 bg-gradient-to-r from-green-400 to-emerald-500"
-                  : i + 1 < step
-                  ? "w-2 bg-green-500"
-                  : "w-2 bg-white/20"
-              }`}
-              animate={i + 1 === step ? { scale: [1, 1.2, 1] } : {}}
-              transition={{ duration: 0.3 }}
-            />
-          ))}
-        </div>
+        <OnboardingProgress
+          currentStep={step}
+          totalSteps={totalSteps}
+          stepLabels={stepLabels}
+          onBack={prev}
+          canGoBack={step > 1}
+        />
       </motion.header>
 
-      {/* Main content with 3D card effect */}
+      {/* Main content */}
       <div className="flex-1 overflow-y-auto no-scrollbar px-5 pb-4 z-10">
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
-            initial={{ opacity: 0, x: 50, rotateY: -10 }}
-            animate={{ opacity: 1, x: 0, rotateY: 0 }}
-            exit={{ opacity: 0, x: -50, rotateY: 10 }}
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
             transition={{ type: "spring", stiffness: 200, damping: 20 }}
             className="py-4"
           >
@@ -328,42 +267,12 @@ export default function OnboardingPage() {
                 </motion.div>
 
                 <div>
-                  <motion.h2
-                    className="text-3xl font-bold mb-3"
-                    initial={{ y: 20 }}
-                    animate={{ y: 0 }}
-                  >
+                  <motion.h2 className="text-3xl font-bold mb-3" initial={{ y: 20 }} animate={{ y: 0 }}>
                     <span className="gradient-text">¡Hola!</span>
                   </motion.h2>
-                  <motion.p
-                    className="text-zinc-400 max-w-xs mx-auto"
-                    initial={{ y: 20 }}
-                    animate={{ y: 0 }}
-                    transition={{ delay: 0.1 }}
-                  >
+                  <motion.p className="text-zinc-400 max-w-xs mx-auto" initial={{ y: 20 }} animate={{ y: 0 }} transition={{ delay: 0.1 }}>
                     Vamos a crear tu plan nutricional personalizado en unos simples pasos
                   </motion.p>
-                </div>
-
-                {/* Animated features */}
-                <div className="grid grid-cols-3 gap-3 mt-6">
-                  {[
-                    { icon: Flame, label: "Calorías", color: "orange" },
-                    { icon: Target, label: "Objetivos", color: "red" },
-                    { icon: Trophy, label: "Planes", color: "yellow" },
-                  ].map((feat, i) => (
-                    <motion.div
-                      key={feat.label}
-                      className="p-4 rounded-2xl glass-card"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 + i * 0.1 }}
-                      whileHover={{ scale: 1.05, y: -5 }}
-                    >
-                      <feat.icon size={24} className={`text-${feat.color}-400 mx-auto mb-2`} />
-                      <p className="text-xs text-zinc-400">{feat.label}</p>
-                    </motion.div>
-                  ))}
                 </div>
               </div>
             )}
@@ -386,7 +295,6 @@ export default function OnboardingPage() {
                     className="w-full p-4 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 outline-none focus:border-green-500/50 text-lg"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    whileFocus={{ scale: 1.02 }}
                     aria-label="Nombre"
                     required
                   />
@@ -407,17 +315,9 @@ export default function OnboardingPage() {
                         }
                       }}
                       className="flex-1 h-2 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-r [&::-webkit-slider-thumb]:from-green-400 [&::-webkit-slider-thumb]:to-emerald-500"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
                       aria-label="Edad"
                     />
-                    <motion.span
-                      className="text-3xl font-bold gradient-text w-16 text-center"
-                      key={data.age}
-                      initial={{ scale: 1.3 }}
-                      animate={{ scale: 1 }}
-                      aria-live="polite"
-                    >
+                    <motion.span className="text-3xl font-bold gradient-text w-16 text-center" key={data.age} initial={{ scale: 1.3 }} animate={{ scale: 1 }} aria-live="polite">
                       {data.age}
                     </motion.span>
                   </div>
@@ -477,13 +377,7 @@ export default function OnboardingPage() {
                       className="flex-1 h-2 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-r [&::-webkit-slider-thumb]:from-purple-400 [&::-webkit-slider-thumb]:to-pink-500"
                       aria-label="Peso en kilogramos"
                     />
-                    <motion.span
-                      className="text-3xl font-bold text-purple-400 w-20 text-center"
-                      key={data.weight}
-                      initial={{ scale: 1.3 }}
-                      animate={{ scale: 1 }}
-                      aria-live="polite"
-                    >
+                    <motion.span className="text-3xl font-bold text-purple-400 w-20 text-center" key={data.weight} initial={{ scale: 1.3 }} animate={{ scale: 1 }} aria-live="polite">
                       {data.weight}
                     </motion.span>
                   </div>
@@ -511,24 +405,14 @@ export default function OnboardingPage() {
                       className="flex-1 h-2 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-r [&::-webkit-slider-thumb]:from-blue-400 [&::-webkit-slider-thumb]:to-cyan-500"
                       aria-label="Altura en centímetros"
                     />
-                    <motion.span
-                      className="text-3xl font-bold text-blue-400 w-20 text-center"
-                      key={data.height}
-                      initial={{ scale: 1.3 }}
-                      animate={{ scale: 1 }}
-                      aria-live="polite"
-                    >
+                    <motion.span className="text-3xl font-bold text-blue-400 w-20 text-center" key={data.height} initial={{ scale: 1.3 }} animate={{ scale: 1 }} aria-live="polite">
                       {data.height}
                     </motion.span>
                   </div>
                 </div>
 
                 {/* Live BMI */}
-                <motion.div
-                  className="p-4 rounded-2xl glass-card text-center"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
+                <motion.div className="p-4 rounded-2xl glass-card text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                   <p className="text-xs text-zinc-400 mb-1">Tu IMC estimado</p>
                   <p className="text-2xl font-bold">
                     {(data.weight / Math.pow(data.height / 100, 2)).toFixed(1)}
@@ -571,11 +455,7 @@ export default function OnboardingPage() {
                         <p className="text-xs text-zinc-500 mt-1">{activityDescriptions[key]}</p>
                       </div>
                       {data.activityLevel === key && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center"
-                        >
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center">
                           <Check size={14} className="text-white" />
                         </motion.div>
                       )}
@@ -610,11 +490,7 @@ export default function OnboardingPage() {
                         <p className="text-xs text-zinc-500">{goalDescriptions[key]}</p>
                       </div>
                       {data.goal === key && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center"
-                        >
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center">
                           <Check size={16} className="text-white" />
                         </motion.div>
                       )}
@@ -653,11 +529,7 @@ export default function OnboardingPage() {
                         </div>
                       </div>
                       {data.speed === key && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="w-6 h-6 rounded-full bg-yellow-500 flex items-center justify-center"
-                        >
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-6 h-6 rounded-full bg-yellow-500 flex items-center justify-center">
                           <Check size={14} className="text-black" />
                         </motion.div>
                       )}
@@ -667,10 +539,20 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {/* Step 7: Dietary Restrictions */}
+            {/* Step 7: Dietary Restrictions (Optional - can skip) */}
             {step === 7 && (
               <div className="space-y-3">
-                <p className="text-sm text-zinc-400 mb-4">¿Tienes alguna restricción alimentaria?</p>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm text-zinc-400">¿Tienes alguna restricción alimentaria?</p>
+                  <motion.button
+                    onClick={handleSkip}
+                    className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    Saltar (opcional)
+                  </motion.button>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   {restrictionOptions.map((opt, i) => (
                     <motion.button
@@ -701,15 +583,6 @@ export default function OnboardingPage() {
                     </motion.button>
                   ))}
                 </div>
-                {data.restrictions.length > 0 && (
-                  <motion.p
-                    className="text-xs text-zinc-500 text-center mt-2"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                  >
-                    {data.restrictions.length} restricción{data.restrictions.length > 1 ? "es" : ""} seleccionada{data.restrictions.length > 1 ? "s" : ""}
-                  </motion.p>
-                )}
               </div>
             )}
 
@@ -740,20 +613,6 @@ export default function OnboardingPage() {
                     </motion.button>
                   ))}
                 </div>
-
-                {/* Serving size indicator */}
-                <motion.div
-                  className="p-4 rounded-2xl glass-card"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    <Users size={16} className="text-cyan-400" />
-                    <span className="text-sm text-zinc-400">
-                      Recetas calculadas para <span className="text-cyan-400 font-bold">{data.servings}</span> comensal{data.servings > 1 ? "es" : ""}
-                    </span>
-                  </div>
-                </motion.div>
               </div>
             )}
 
@@ -761,24 +620,12 @@ export default function OnboardingPage() {
             {step === 9 && (
               <div className="space-y-4">
                 <div className="text-center mb-6">
-                  <motion.div
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/10 border border-green-500/30 mb-4"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                  >
-                    <Star size={14} className="text-green-400" />
-                    <span className="text-sm text-green-400">Tu plan personalizado</span>
-                  </motion.div>
-                  <motion.h2
-                    className="text-2xl font-bold"
-                    initial={{ y: 20 }}
-                    animate={{ y: 0 }}
-                  >
+                  <motion.h2 className="text-2xl font-bold" initial={{ y: 20 }} animate={{ y: 0 }}>
                     ¡Hola, <span className="gradient-text">{data.name || "amigo"}</span>!
                   </motion.h2>
                 </div>
 
-                {/* Main calorie card */}
+                {/* Main calorie card with real-time preview */}
                 <motion.div
                   className="relative p-6 rounded-3xl overflow-hidden"
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -800,56 +647,28 @@ export default function OnboardingPage() {
                     </motion.p>
                     <p className="text-zinc-400 mt-1">kcal / día</p>
 
-                    {/* Animated ring */}
-                    <div className="relative w-32 h-32 mx-auto mt-4">
-                      <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                        <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8" />
-                        <motion.circle
-                          cx="50" cy="50" r="42"
-                          fill="none"
-                          stroke="url(#summaryGradient)"
-                          strokeWidth="8"
-                          strokeLinecap="round"
-                          strokeDasharray={264}
-                          initial={{ strokeDashoffset: 264 }}
-                          animate={{ strokeDashoffset: 264 - (264 * 0.75) }}
-                          transition={{ duration: 1.5, ease: "easeOut" }}
-                        />
-                        <defs>
-                          <linearGradient id="summaryGradient">
-                            <stop offset="0%" stopColor="#4ade80" />
-                            <stop offset="100%" stopColor="#22c55e" />
-                          </linearGradient>
-                        </defs>
-                      </svg>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <Flame size={24} className="text-orange-400 mb-1" />
-                        <span className="text-xs text-zinc-400">75%</span>
-                      </div>
+                    {/* Macros preview */}
+                    <div className="grid grid-cols-3 gap-3 mt-6">
+                      {[
+                        { label: "Proteínas", value: macros.protein_g, color: "blue", icon: Activity },
+                        { label: "Carbos", value: macros.carbs_g, color: "yellow", icon: Zap },
+                        { label: "Grasas", value: macros.fat_g, color: "red", icon: Heart },
+                      ].map((macro, i) => (
+                        <motion.div
+                          key={macro.label}
+                          className="p-3 rounded-2xl glass-card text-center"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.3 + i * 0.1 }}
+                        >
+                          <macro.icon size={14} className={`text-${macro.color}-400 mx-auto mb-1`} />
+                          <p className={`text-xl font-bold text-${macro.color}-400`}>{macro.value}g</p>
+                          <p className="text-xs text-zinc-400">{macro.label}</p>
+                        </motion.div>
+                      ))}
                     </div>
                   </div>
                 </motion.div>
-
-                {/* Macros */}
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: "Proteínas", value: macros.protein_g, color: "blue", icon: Activity },
-                    { label: "Carbos", value: macros.carbs_g, color: "yellow", icon: Zap },
-                    { label: "Grasas", value: macros.fat_g, color: "red", icon: Heart },
-                  ].map((macro, i) => (
-                    <motion.div
-                      key={macro.label}
-                      className="p-4 rounded-2xl glass-card text-center"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 + i * 0.1 }}
-                    >
-                      <macro.icon size={16} className={`text-${macro.color}-400 mx-auto mb-1`} />
-                      <p className={`text-2xl font-bold text-${macro.color}-400`}>{macro.value}g</p>
-                      <p className="text-xs text-zinc-400">{macro.label}</p>
-                    </motion.div>
-                  ))}
-                </div>
 
                 {/* Summary details */}
                 <motion.div
@@ -859,16 +678,13 @@ export default function OnboardingPage() {
                   transition={{ delay: 0.6 }}
                 >
                   {[
-                    { label: "Peso objetivo", value: `${data.weight} kg`, icon: Scale },
-                    { label: "Altura", value: `${data.height} cm`, icon: Ruler },
-                    { label: "Objetivo", value: goalLabels[data.goal], icon: Target },
-                    { label: "Comensales", value: `${data.servings} persona${data.servings > 1 ? "s" : ""}`, icon: Users },
+                    { label: "Peso", value: `${data.weight} kg` },
+                    { label: "Altura", value: `${data.height} cm` },
+                    { label: "Objetivo", value: goalLabels[data.goal] },
+                    { label: "Comensales", value: `${data.servings} persona${data.servings > 1 ? "s" : ""}` },
                   ].map((item) => (
                     <div key={item.label} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <item.icon size={14} className="text-zinc-500" />
-                        <span className="text-sm text-zinc-400">{item.label}</span>
-                      </div>
+                      <span className="text-sm text-zinc-400">{item.label}</span>
                       <span className="text-sm font-medium">{item.value}</span>
                     </div>
                   ))}
@@ -885,80 +701,70 @@ export default function OnboardingPage() {
             className="mt-4 p-4 rounded-2xl bg-red-500/10 border border-red-500/30"
           >
             <p className="text-red-400 text-sm text-center">⚠️ {error}</p>
-            <details className="mt-2 text-xs text-red-400/70">
-              <summary className="cursor-pointer">Ver detalles técnicos</summary>
-              <pre className="mt-1 p-2 bg-black/20 rounded text-xs overflow-auto">{error}</pre>
-            </details>
           </motion.div>
         )}
       </div>
 
       {/* Footer with animated button */}
       <div className="relative px-5 pb-6 pt-4 z-10">
-        <motion.button
-          onClick={step === totalSteps ? handleFinish : next}
-          disabled={saving}
-          className={`w-full py-4 rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 relative overflow-hidden ${
-            step === totalSteps
-              ? "bg-gradient-to-r from-green-500 to-emerald-600 shadow-green-500/30"
-              : "bg-gradient-to-r from-green-500 to-emerald-600 shadow-green-500/30"
-          }`}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <span className="relative z-10 flex items-center gap-2">
-            {saving ? (
-              <>
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                >
-                  <Sparkles size={20} />
-                </motion.div>
-                <span>Guardando...</span>
-              </>
-            ) : step === totalSteps ? (
-              <>
-                <Trophy size={20} />
-                <span>¡Empezar!</span>
-              </>
-            ) : (
-              <>
-                <span>Continuar</span>
-                <motion.div
-                  animate={{ x: [0, 5, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >
-                  <ArrowRight size={20} />
-                </motion.div>
-              </>
-            )}
-          </span>
-
-          {/* Shimmer */}
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-            initial={{ x: "-100%" }}
-            whileHover={{ x: "100%" }}
-            transition={{ duration: 0.6 }}
+        {completed ? (
+          <OnboardingComplete
+            userName={data.name}
+            dailyCalories={dailyCalories}
+            onStartTracking={handleStartTracking}
           />
-        </motion.button>
+        ) : (
+          <>
+            <motion.button
+              onClick={step === totalSteps ? handleFinish : next}
+              disabled={!canProceed || saving}
+              className={`w-full py-4 rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 relative overflow-hidden ${
+                canProceed && !saving
+                  ? "bg-gradient-to-r from-green-500 to-emerald-600 shadow-green-500/30"
+                  : "bg-white/10 cursor-not-allowed"
+              }`}
+              whileHover={canProceed && !saving ? { scale: 1.02 } : {}}
+              whileTap={canProceed && !saving ? { scale: 0.98 } : {}}
+            >
+              <span className="relative z-10 flex items-center gap-2">
+                {saving ? (
+                  <>
+                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
+                      <Sparkles size={20} />
+                    </motion.div>
+                    <span>Guardando...</span>
+                  </>
+                ) : step === totalSteps ? (
+                  <>
+                    <span>¡Empezar!</span>
+                    <Check size={20} />
+                  </>
+                ) : (
+                  <>
+                    <span>Continuar</span>
+                    <motion.div animate={{ x: [0, 5, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
+                      <ArrowRight size={20} />
+                    </motion.div>
+                  </>
+                )}
+              </span>
+            </motion.button>
 
-        {/* Skip option */}
-        {step < totalSteps && (
-          <motion.button
-            className="w-full mt-3 text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            Saltar onboarding
-          </motion.button>
+            {/* Skip option for optional steps */}
+            {!stepConfig[step - 1]?.required && step < totalSteps && (
+              <motion.button
+                onClick={handleSkip}
+                className="w-full mt-3 text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                Saltar este paso
+              </motion.button>
+            )}
+          </>
         )}
       </div>
-
-      {/* Bottom gradient */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#0a0a0f] to-transparent pointer-events-none" />
     </div>
   );
 }

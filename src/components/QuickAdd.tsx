@@ -1,154 +1,107 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, X, Plus, Check, Loader2 } from "lucide-react";
 import { useHaptic } from "@/hooks/useHaptic";
+import { Plus, Zap, Clock, ChevronRight, X } from "lucide-react";
+import type { FoodResult } from "./add-food/types";
 
-interface QuickMeal {
-  label: string;
+interface QuickAddProps {
+  mealType: string;
+  onAddFood: (result: FoodResult) => void;
+  userId?: string;
+}
+
+interface QuickPreset {
+  id: string;
+  name: string;
   calories: number;
   protein: number;
   carbs: number;
   fat: number;
   emoji: string;
-  type: string;
 }
 
-const quickMeals: QuickMeal[] = [
-  { label: "Desayuno ligero", calories: 250, protein: 10, carbs: 35, fat: 8, emoji: "🥣", type: "breakfast" },
-  { label: "Desayuno completo", calories: 450, protein: 25, carbs: 45, fat: 18, emoji: "🍳", type: "breakfast" },
-  { label: "Almuerzo rápido", calories: 500, protein: 35, carbs: 50, fat: 15, emoji: "🍗", type: "lunch" },
-  { label: "Ensalada", calories: 350, protein: 20, carbs: 25, fat: 20, emoji: "🥗", type: "lunch" },
-  { label: "Snack fruta", calories: 120, protein: 2, carbs: 28, fat: 1, emoji: "🍎", type: "snack" },
-  { label: "Snack frutos", calories: 200, protein: 5, carbs: 15, fat: 15, emoji: "🥜", type: "snack" },
-  { label: "Cena ligera", calories: 400, protein: 35, carbs: 30, fat: 15, emoji: "🥦", type: "dinner" },
-  { label: "Cena completa", calories: 550, protein: 40, carbs: 45, fat: 25, emoji: "🐟", type: "dinner" },
+const defaultPresets: QuickPreset[] = [
+  { id: "1", name: "Yogur con granola", calories: 180, protein: 10, carbs: 25, fat: 5, emoji: "🍶" },
+  { id: "2", name: "Manzana", calories: 95, protein: 0, carbs: 25, fat: 0, emoji: "🍎" },
+  { id: "3", name: "Huevo cocido", calories: 78, protein: 6, carbs: 1, fat: 5, emoji: "🥚" },
+  { id: "4", name: "Plátano", calories: 105, protein: 1, carbs: 27, fat: 0, emoji: "🍌" },
+  { id: "5", name: "Puñado de almendras", calories: 165, protein: 6, carbs: 6, fat: 14, emoji: "🥜" },
+  { id: "6", name: "Tostada con aguacate", calories: 220, protein: 5, carbs: 23, fat: 12, emoji: "🥑" },
 ];
 
-interface QuickAddProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onAdd: (meal: QuickMeal) => Promise<void>;
-  mealType?: string;
-}
+function QuickAddComponent({ mealType, onAddFood, userId }: QuickAddProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const { light, medium } = useHaptic();
 
-export function QuickAdd({ isOpen, onClose, onAdd, mealType }: QuickAddProps) {
-  const [adding, setAdding] = useState<string | null>(null);
-  const { success, light } = useHaptic();
-
-  const filtered = mealType 
-    ? quickMeals.filter(m => m.type === mealType)
-    : quickMeals;
-
-  async function handleAdd(meal: QuickMeal) {
+  const handleSelect = useCallback((preset: QuickPreset) => {
     light();
-    setAdding(meal.label);
-    try {
-      await onAdd(meal);
-      success();
-      onClose();
-    } finally {
-      setAdding(null);
-    }
-  }
+    const result: FoodResult = {
+      description: preset.name,
+      calories: preset.calories,
+      protein_g: preset.protein,
+      carbs_g: preset.carbs,
+      fat_g: preset.fat,
+      meal_type: mealType,
+      confidence: 1,
+    };
+    onAddFood(result);
+    setIsOpen(false);
+  }, [mealType, onAddFood, light]);
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-end justify-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          {/* Backdrop */}
+    <>
+      <motion.button
+        onClick={() => { medium(); setIsOpen(true); }}
+        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-medium"
+        whileTap={{ scale: 0.95 }}
+      >
+        <Plus size={18} />
+        Añadir rápido
+      </motion.button>
+
+      <AnimatePresence>
+        {isOpen && (
           <motion.div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={onClose}
+            className="fixed inset-0 z-50 flex items-end justify-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-          />
-
-          {/* Panel */}
-          <motion.div
-            className="relative w-full max-w-lg bg-[#0a0a0f] border-t border-white/10 rounded-t-3xl p-5 pb-8 max-h-[70vh] overflow-y-auto"
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
           >
-            {/* Handle */}
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1 bg-white/20 rounded-full" />
-
-            {/* Header */}
-            <div className="flex items-center justify-between mt-4 mb-4">
-              <div className="flex items-center gap-2">
-                <Zap size={20} className="text-green-400" />
-                <h2 className="text-lg font-bold">Añadir rápido</h2>
+            <div className="absolute inset-0 bg-black/60" onClick={() => setIsOpen(false)} />
+            <motion.div
+              className="relative w-full max-w-lg bg-[#0a0a0f] rounded-t-3xl p-5 pb-8"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold">Añadir rápidamente</h3>
+                <button onClick={() => setIsOpen(false)} className="p-2">
+                  <X size={20} className="text-zinc-400" />
+                </button>
               </div>
-              <button
-                onClick={onClose}
-                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
-              >
-                <X size={18} className="text-zinc-400" />
-              </button>
-            </div>
-
-            {/* Quick meals grid */}
-            <div className="grid grid-cols-2 gap-3">
-              {filtered.map((meal, i) => (
-                <motion.button
-                  key={meal.label}
-                  onClick={() => handleAdd(meal)}
-                  disabled={adding !== null}
-                  className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left hover:border-green-500/30 transition-colors relative overflow-hidden"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {/* Glow effect when adding */}
-                  {adding === meal.label && (
-                    <motion.div
-                      className="absolute inset-0 bg-green-500/20"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                    />
-                  )}
-
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-2xl">{meal.emoji}</span>
-                      <span className="text-lg font-bold text-orange-400">{meal.calories}</span>
-                    </div>
-                    <p className="text-sm text-white/80 font-medium mb-1">{meal.label}</p>
-                    <p className="text-xs text-zinc-500">
-                      P: {meal.protein}g · C: {meal.carbs}g · G: {meal.fat}g
-                    </p>
-                  </div>
-
-                  {adding === meal.label && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity }}
-                      >
-                        <Loader2 size={24} className="text-green-400" />
-                      </motion.div>
-                    </div>
-                  )}
-                </motion.button>
-              ))}
-            </div>
-
-            <p className="text-center text-xs text-zinc-500 mt-4">
-              Desliza a la izquierda en una comida para eliminarla
-            </p>
+              <div className="grid grid-cols-3 gap-3">
+                {defaultPresets.map((preset) => (
+                  <motion.button
+                    key={preset.id}
+                    onClick={() => handleSelect(preset)}
+                    className="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center gap-2"
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <span className="text-2xl">{preset.emoji}</span>
+                    <span className="text-xs text-center">{preset.name}</span>
+                    <span className="text-xs text-zinc-500">{preset.calories} kcal</span>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
           </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
+
+export const QuickAdd = memo(QuickAddComponent);
