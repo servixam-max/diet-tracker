@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,6 +15,12 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createClient();
+    
+    // Admin client for bypassing RLS (user not logged in yet after signUp)
+    const supabaseAdmin = createSupabaseAdmin(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
     // Register with Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -34,8 +41,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Error al crear usuario" }, { status: 400 });
     }
 
-    // Create profile in public.profiles
-    const { error: profileError } = await supabase.from("profiles").insert({
+    // Create profile in public.profiles (use admin client to bypass RLS)
+    const { error: profileError } = await supabaseAdmin.from("profiles").insert({
       id: authData.user.id,
       email,
       name: name || email.split("@")[0],
