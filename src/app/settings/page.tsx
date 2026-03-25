@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
@@ -15,8 +15,13 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<"goals" | "calculator" | "notifications" | "appearance">("goals");
   const router = useRouter();
   const { user, loading } = useAuth();
+  const [isDemo, setIsDemo] = useState(false);
 
-  if (!loading && !user) {
+  useEffect(() => {
+    setIsDemo(localStorage.getItem("demo-mode") === "true");
+  }, []);
+
+  if (!loading && !user && !isDemo) {
     router.push("/login");
     return null;
   }
