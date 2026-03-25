@@ -60,6 +60,8 @@ export default function LoginPage() {
   function handleDemo() {
     triggerHaptic("medium");
     localStorage.setItem("demo-mode", "true");
+    // Set cookie for middleware to read
+    document.cookie = "demo-mode=true; path=/; max-age=86400";
     localStorage.setItem("demo-user", JSON.stringify({
       id: "demo-user",
       email: "demo@diettracker.app",

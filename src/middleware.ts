@@ -7,6 +7,9 @@ const authRoutes = ["/login", "/register"];
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Check for demo mode
+  const isDemoMode = request.cookies.get("demo-mode")?.value === "true";
+
   let supabaseResponse = NextResponse.next({
     request: {
       headers: request.headers,
@@ -44,13 +47,14 @@ export async function middleware(request: NextRequest) {
 
   const hasSession = !!user;
 
-  if (protectedRoutes.some((route) => pathname.startsWith(route)) && !hasSession) {
+  // Allow demo mode to access protected routes
+  if (protectedRoutes.some((route) => pathname.startsWith(route)) && !hasSession && !isDemoMode) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  if (authRoutes.some((route) => pathname.startsWith(route)) && hasSession) {
+  if (authRoutes.some((route) => pathname.startsWith(route)) && (hasSession || isDemoMode)) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

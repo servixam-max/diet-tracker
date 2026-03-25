@@ -11,6 +11,7 @@ export default function DemoPage() {
 
   useEffect(() => {
     localStorage.setItem("demo-mode", "true");
+    document.cookie = "demo-mode=true; path=/; max-age=86400";
     const timer = setTimeout(() => {
       router.push("/dashboard");
     }, 100);
