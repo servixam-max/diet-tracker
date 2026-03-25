@@ -10,9 +10,8 @@ import { calculateBMR, calculateTDEE, calculateDailyCalories, distributeMacros, 
 import Particles from "@tsparticles/react";
 import { initParticlesEngine } from "@tsparticles/react";
 import { loadSlim } from "@tsparticles/slim";
-import { ArrowRight, Check, Sparkles, Scale, Ruler, Activity, Target, Zap, Utensils, Users, Brain, Flame, Heart } from "lucide-react";
+import { ArrowRight, Check, Sparkles, Scale, Ruler, Activity, Target, Zap, Utensils, Users, Brain, Heart } from "lucide-react";
 import { validateField, validators } from "@/lib/validation";
-import { logger } from "@/lib/logger";
 
 interface OnboardingData {
   name: string;
@@ -78,8 +77,6 @@ export default function OnboardingPage() {
   const tdee = calculateTDEE(bmr, data.activityLevel);
   const dailyCalories = calculateDailyCalories(tdee, data.goal, data.speed);
   const macros = distributeMacros(dailyCalories, data.goal, data.weight);
-
-  const currentConfig = stepConfig[step - 1];
 
   useEffect(() => {
     initParticlesEngine(async (engine) => {
@@ -156,9 +153,9 @@ export default function OnboardingPage() {
 
       await refreshUser();
       setCompleted(true);
-    } catch (err: any) {
-      console.error("Onboarding save error:", err);
-      setError(err.message || "Error al guardar");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Error al guardar";
+      setError(message);
     } finally {
       setSaving(false);
     }

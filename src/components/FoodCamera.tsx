@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Camera, X, Flashlight, Image, RotateCcw, Check, Loader2 } from "lucide-react";
 import { useHaptic } from "@/hooks/useHaptic";
@@ -22,16 +22,7 @@ export function FoodCamera({ isOpen, onClose, onCapture }: FoodCameraProps) {
   const streamRef = useRef<MediaStream | null>(null);
   const { light, success } = useHaptic();
 
-  useEffect(() => {
-    if (isOpen) {
-      startCamera();
-    } else {
-      stopCamera();
-    }
-    return () => stopCamera();
-  }, [isOpen]);
-
-  async function startCamera() {
+  const startCamera = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
@@ -42,25 +33,34 @@ export function FoodCamera({ isOpen, onClose, onCapture }: FoodCameraProps) {
       }
       setHasPermission(true);
       setCameraError(null);
-    } catch (err: any) {
-      console.error("Camera error:", err);
+    } catch (err) {
+      const error = err as Error;
       setHasPermission(false);
-      if (err.name === "NotAllowedError") {
+      if (error.name === "NotAllowedError") {
         setCameraError("Por favor, permite el acceso a la cámara");
-      } else if (err.name === "NotFoundError") {
+      } else if (error.name === "NotFoundError") {
         setCameraError("No se encontró cámara en este dispositivo");
       } else {
         setCameraError("Error al iniciar la cámara");
       }
     }
-  }
+  }, []);
 
-  function stopCamera() {
+  const stopCamera = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+    return () => stopCamera();
+  }, [isOpen, startCamera, stopCamera]);
 
   function capturePhoto() {
     light();
@@ -89,7 +89,6 @@ export function FoodCamera({ isOpen, onClose, onCapture }: FoodCameraProps) {
     setIsAnalyzing(true);
     light();
     
-    // Simulate AI analysis
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     setIsAnalyzing(false);

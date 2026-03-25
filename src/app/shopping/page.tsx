@@ -33,8 +33,6 @@ const supermarketBadgeColors: Record<string, string> = {
 export default function ShoppingPage() {
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [activeSupermarket, setActiveSupermarket] = useState("Todos");
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [editingItem, setEditingItem] = useState<string | null>(null);
   const { light, success } = useHaptic();
 
   const supermarkets = ["Todos", "Mercadona", "Lidl", "Aldi", "Family Cash"];

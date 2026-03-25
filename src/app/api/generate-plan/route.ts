@@ -2,11 +2,28 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import generatePlan, { regeneratePlan, swapMeals, getWeekDates } from "@/lib/planGenerator";
 
+interface GeneratedDay {
+  date: string;
+  dayName: string;
+  meals: {
+    recipeId: string;
+    name: string;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    meal_type: string;
+    supermarket: string;
+  }[];
+  totalCalories: number;
+  totalProtein: number;
+}
+
 interface PlanTemplate {
   id: string;
   userId: string;
   name: string;
-  planData: any[];
+  planData: GeneratedDay[];
   targetCalories: number;
   createdAt: string;
 }
@@ -90,7 +107,7 @@ export async function PATCH(request: NextRequest) {
     const targetCalories = profile?.daily_calories || 2000;
     const restrictions = profile?.dietary_restrictions || [];
     
-    let newPlan: any[];
+    let newPlan: GeneratedDay[];
     
     if (action === "regenerate-day" && typeof dayIndex === "number") {
       // Regenerate single day

@@ -1,62 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 
 export function OfflineIndicator() {
   const [isOnline, setIsOnline] = useState(true);
   const [syncPending, setSyncPending] = useState(false);
+  const dbRef = useRef<IDBDatabase | null>(null);
 
-  useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      // Check if there are pending sync operations
-      checkSyncPending();
-    };
+  const openDatabase = useCallback(async (): Promise<IDBDatabase> => {
+    if (dbRef.current) return dbRef.current;
     
-    const handleOffline = () => {
-      setIsOnline(false);
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    // Initialize state
-    setIsOnline(navigator.onLine);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  const checkSyncPending = async () => {
-    // Check IndexedDB for pending sync operations
-    try {
-      const db = await openDB();
-      const tx = db.transaction('sync_queue', 'readonly');
-      const store = tx.objectStore('sync_queue');
-      const countRequest = store.count();
-      await new Promise<void>((resolve) => {
-        countRequest.onsuccess = () => {
-          setSyncPending(countRequest.result > 0);
-          resolve();
-        };
-        countRequest.onerror = () => {
-          setSyncPending(false);
-          resolve();
-        };
-      });
-    } catch (e) {
-      setSyncPending(false);
-    }
-  };
-
-  // Import openDB from our db module
-  async function openDB(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open('diet_tracker', 1);
       request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result);
+      request.onsuccess = () => {
+        dbRef.current = request.result;
+        resolve(request.result);
+      };
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
         if (!db.objectStoreNames.contains('sync_queue')) {
@@ -64,7 +24,48 @@ export function OfflineIndicator() {
         }
       };
     });
-  }
+  }, []);
+
+  const checkSyncPending = useCallback(async () => {
+    try {
+      const db = await openDatabase();
+      return new Promise<boolean>((resolve) => {
+        const tx = db.transaction('sync_queue', 'readonly');
+        const store = tx.objectStore('sync_queue');
+        const countRequest = store.count();
+        countRequest.onsuccess = () => {
+          resolve(countRequest.result > 0);
+        };
+        countRequest.onerror = () => {
+          resolve(false);
+        };
+      });
+    } catch {
+      return false;
+    }
+  }, [openDatabase]);
+
+  useEffect(() => {
+    const handleOnline = async () => {
+      setIsOnline(true);
+      const pending = await checkSyncPending();
+      setSyncPending(pending);
+    };
+    
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+
+    setIsOnline(navigator.onLine);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [checkSyncPending]);
 
   if (isOnline && !syncPending) {
     return null;

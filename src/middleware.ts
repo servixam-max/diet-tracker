@@ -1,34 +1,60 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 
-const protectedRoutes = ["/dashboard", "/recipes", "/shopping", "/profile", "/onboarding"];
+const protectedRoutes = ["/dashboard", "/recipes", "/shopping", "/profile", "/onboarding", "/weekly-plan", "/coach", "/settings"];
 const authRoutes = ["/login", "/register"];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
-  // Check for Supabase auth cookies (Supabase creates cookies starting with sb- and ending with auth-token)
-  const cookies = request.cookies.getAll();
-  const hasSupabaseCookie = cookies.some(c => 
-    c.name.includes('sb-') && 
-    (c.name.includes('auth-token') || c.name.includes('auth-code-verifier'))
-  );
-  
-  const hasSession = hasSupabaseCookie;
 
-  // Redirect to login if accessing protected route without session
-  if (protectedRoutes.some(route => pathname.startsWith(route)) && !hasSession) {
+  let supabaseResponse = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            request.cookies.set(name, value)
+          );
+          supabaseResponse = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const hasSession = !!user;
+
+  if (protectedRoutes.some((route) => pathname.startsWith(route)) && !hasSession) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect to dashboard if accessing auth routes with session
-  if (authRoutes.some(route => pathname.startsWith(route)) && hasSession) {
+  if (authRoutes.some((route) => pathname.startsWith(route)) && hasSession) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  return NextResponse.next();
+  return supabaseResponse;
 }
 
 export const config = {

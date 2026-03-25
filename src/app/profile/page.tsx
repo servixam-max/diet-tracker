@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
@@ -12,15 +12,14 @@ import { AchievementBadge } from "@/components/AchievementBadge";
 import { StreakCounter } from "@/components/StreakCounter";
 
 export default function ProfilePage() {
-  const [mounted, setMounted] = useState(false);
+  const mountedRef = useRef(false);
   const [isDemo, setIsDemo] = useState(false);
   const router = useRouter();
   const { user, logout, loading } = useAuth();
 
   useEffect(() => {
-    setMounted(true);
-    const demoMode = localStorage.getItem("demo-mode") === "true";
-    setIsDemo(demoMode);
+    mountedRef.current = true;
+    setIsDemo(localStorage.getItem("demo-mode") === "true");
   }, []);
 
   useEffect(() => {
@@ -35,7 +34,8 @@ export default function ProfilePage() {
     router.push("/login");
   }
 
-  if (!mounted || loading) {
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  if (!mountedRef.current || loading) {
     return (
       <div className="h-full flex items-center justify-center">
         <motion.div

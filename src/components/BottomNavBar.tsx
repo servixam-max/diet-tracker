@@ -2,14 +2,19 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence, useSpring } from "framer-motion";
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Bell } from "lucide-react";
+
+interface IconProps {
+  isActive?: boolean;
+  className?: string;
+}
 
 const navItems = [
   { 
     href: "/dashboard", 
     label: "Inicio",
-    icon: (props: any) => (
+    icon: (props: IconProps) => (
       <svg viewBox="0 0 24 24" {...props}>
         <path 
           d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" 
@@ -33,7 +38,7 @@ const navItems = [
   { 
     href: "/weekly-plan", 
     label: "Plan",
-    icon: (props: any) => (
+    icon: (props: IconProps) => (
       <svg viewBox="0 0 24 24" {...props}>
         <rect 
           x="3" 
@@ -55,7 +60,7 @@ const navItems = [
   { 
     href: "/recipes", 
     label: "Recetas",
-    icon: (props: any) => (
+    icon: (props: IconProps) => (
       <svg viewBox="0 0 24 24" {...props}>
         <path 
           d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" 
@@ -81,7 +86,7 @@ const navItems = [
   { 
     href: "/shopping", 
     label: "Lista",
-    icon: (props: any) => (
+    icon: (props: IconProps) => (
       <svg viewBox="0 0 24 24" {...props}>
         <circle cx="9" cy="21" r="1" fill="currentColor" />
         <circle cx="20" cy="21" r="1" fill="currentColor" />
@@ -99,7 +104,7 @@ const navItems = [
   { 
     href: "/profile", 
     label: "Perfil",
-    icon: (props: any) => (
+    icon: (props: IconProps) => (
       <svg viewBox="0 0 24 24" {...props}>
         <path 
           d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" 
@@ -137,22 +142,18 @@ const triggerHaptic = (type: 'light' | 'medium' | 'heavy' = 'light') => {
 function NavItem({ item, isActive, index }: { item: typeof navItems[0], isActive: boolean, index: number }) {
   const router = useRouter();
   const ref = useRef<HTMLButtonElement>(null);
-  const [isPressed, setIsPressed] = useState(false);
   
-  // Spring physics for iOS-style animation
   const springConfig = { stiffness: 400, damping: 25 };
   const scale = useSpring(1, springConfig);
   const y = useSpring(0, springConfig);
   
   const handlePressStart = () => {
-    setIsPressed(true);
     scale.set(0.85);
     y.set(2);
     triggerHaptic('light');
   };
   
   const handlePressEnd = () => {
-    setIsPressed(false);
     scale.set(1);
     y.set(0);
   };

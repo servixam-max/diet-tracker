@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { logger } from "@/lib/logger";
 
 interface User {
   id: string;
@@ -73,7 +72,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ...profile,
       });
     } catch (error) {
-      console.error("Refresh user error:", error);
       setUser(null);
     } finally {
       setLoading(false);
@@ -81,6 +79,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
+    // Check for demo mode
+    const isDemo = localStorage.getItem('demo-mode') === 'true';
+    if (isDemo) {
+      const demoUser = localStorage.getItem('demo-user');
+      if (demoUser) {
+        setUser(JSON.parse(demoUser));
+        setLoading(false);
+        return;
+      }
+    }
+    
     refreshUser();
 
     // Listen for auth changes
@@ -110,7 +119,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await refreshUser();
       return {};
     } catch (error) {
-      logger.error("Login error:", error);
       return { error: "Error al iniciar sesión" };
     }
   }
@@ -148,7 +156,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
 
         if (profileError) {
-          logger.error("Profile creation error:", profileError);
           return { error: "Error al crear perfil: " + profileError.message };
         }
       }
@@ -156,7 +163,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Refresh will be called by onAuthStateChange
       return {};
     } catch (error) {
-      logger.error("Register error:", error);
       return { error: "Error al registrar" };
     }
   }
@@ -166,7 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await supabase.auth.signOut();
       setUser(null);
     } catch (error) {
-      console.error("Logout error:", error);
+      // Silent fail on logout
     }
   }
 

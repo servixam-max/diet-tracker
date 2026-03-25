@@ -1,8 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { motion, AnimatePresence, useAnimation, useDragControls } from "framer-motion";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { useAuth } from "@/components/AuthProvider";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { AnimatedStatCard } from "@/components/AnimatedStats";
@@ -10,7 +10,7 @@ import { WaterTracker } from "@/components/WaterTracker";
 import { CalorieRing } from "@/components/CalorieRing";
 import { StreakCounter } from "@/components/StreakCounter";
 import { DailyTips } from "@/components/DailyTips";
-import { showToast, triggerHaptic } from "@/components/ui/Feedback";
+import { showToast } from "@/components/ui/Feedback";
 import { useHaptic } from "@/hooks/useHaptic";
 import { RefreshCw, Flame, Activity, Zap, ChevronRight, Target, ArrowDown } from "lucide-react";
 
@@ -78,7 +78,6 @@ export default function DashboardPage() {
   const [pullY, setPullY] = useState(0);
   const [pulling, setPulling] = useState(false);
   const controls = useAnimation();
-  const dragControls = useDragControls();
   const { light, medium } = useHaptic();
   
   // Memoized totals calculation
@@ -89,8 +88,6 @@ export default function DashboardPage() {
   
   const animatedCalories = useAnimatedCounter(totalCalories);
   const animatedProtein = useAnimatedCounter(totalProtein);
-  const animatedCarbs = useAnimatedCounter(totalCarbs);
-  const animatedFat = useAnimatedCounter(totalFat);
 
   const fetchData = useCallback(async () => {
     try {
@@ -226,11 +223,11 @@ export default function DashboardPage() {
         dragConstraints={{ top: -200, bottom: 0 }}
         dragElastic={0.3}
         onDragStart={() => { setPulling(true); light(); }}
-        onDrag={(e, info) => {
+        onDrag={(_e, info) => {
           setPullY(info.offset.y);
           controls.start({ y: info.offset.y });
         }}
-        onDragEnd={(e, info) => {
+        onDragEnd={() => {
           handlePullRefresh();
           controls.start({ y: 0 });
         }}

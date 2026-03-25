@@ -9,7 +9,7 @@ interface UseOfflineSyncOptions {
 }
 
 export function useOfflineSync({ userId, onSyncComplete }: UseOfflineSyncOptions) {
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
   const [hasPendingSync, setHasPendingSync] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
@@ -95,17 +95,16 @@ export function useOfflineSync({ userId, onSyncComplete }: UseOfflineSyncOptions
       }
 
       // Process sync queue
-      const queue = await offlineDB.getSyncQueue();
+      const queue = await offlineDB.getSyncQueue() as Array<{ id?: number; type: string; data: unknown }>;
       for (const item of queue) {
         try {
-          // Process based on type
           if (item.type === "food-log") {
             const response = await fetch("/api/food-log", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(item.data),
             });
-            if (response.ok) {
+            if (response.ok && item.id !== undefined) {
               await offlineDB.removeFromSyncQueue(item.id);
             }
           }

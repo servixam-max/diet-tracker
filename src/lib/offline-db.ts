@@ -22,7 +22,7 @@ export interface OfflineFoodLog {
 export interface OfflineWeeklyPlan {
   id?: number;
   weekStart: string;
-  planData: any;
+  planData: unknown;
   targetCalories: number;
   synced: boolean;
   created_at: string;
@@ -174,7 +174,7 @@ class OfflineDB {
   }
 
   // Sync queue
-  async addToSyncQueue(action: { type: string; data: any }): Promise<void> {
+  async addToSyncQueue(action: { type: string; data: unknown }): Promise<void> {
     const db = await this.init();
     return new Promise((resolve, reject) => {
       const tx = db.transaction("syncQueue", "readwrite");
@@ -185,7 +185,7 @@ class OfflineDB {
     });
   }
 
-  async getSyncQueue(): Promise<any[]> {
+  async getSyncQueue(): Promise<unknown[]> {
     const db = await this.init();
     return new Promise((resolve, reject) => {
       const tx = db.transaction("syncQueue", "readonly");

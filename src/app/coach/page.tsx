@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { AIChatCoach } from "@/components/AIChatCoach";
-import { Bot, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 export default function CoachPage() {
   return (

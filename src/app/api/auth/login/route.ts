@@ -36,8 +36,7 @@ export async function POST(request: NextRequest) {
       session: authData.session,
     });
 
-  } catch (error) {
-    console.error("Login error:", error);
+  } catch {
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }

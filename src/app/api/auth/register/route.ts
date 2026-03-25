@@ -52,7 +52,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (profileError) {
-      console.error("Profile creation error:", profileError);
       return NextResponse.json({ error: "Error al crear perfil: " + profileError.message }, { status: 400 });
     }
 
@@ -65,8 +64,7 @@ export async function POST(request: NextRequest) {
       session: authData.session,
     });
 
-  } catch (error) {
-    console.error("Register error:", error);
+  } catch {
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }

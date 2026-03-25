@@ -39,7 +39,6 @@ export async function GET() {
     return NextResponse.json(profile);
 
   } catch (error) {
-    console.error("Profile GET error:", error);
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }
@@ -67,10 +66,6 @@ export async function PUT(request: NextRequest) {
       updates.macros = macros;
     }
 
-    console.log("[Profile PUT] User ID:", user.id);
-    console.log("[Profile PUT] Updates:", JSON.stringify(updates, null, 2));
-
-    // Try UPDATE first
     const { data, error, status } = await supabase
       .from("profiles")
       .update(updates)
@@ -79,12 +74,7 @@ export async function PUT(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error("[Profile PUT] Update error:", error.code, error.message);
-      
-      // If update affects 0 rows, profile doesn't exist - try INSERT
       if (error.code === 'PGRST116' || status === 404) {
-        console.log("[Profile PUT] Profile not found, trying INSERT...");
-        
         const insertData = {
           id: user.id,
           email: user.email,
@@ -98,14 +88,12 @@ export async function PUT(request: NextRequest) {
           .single();
         
         if (insertError) {
-          console.error("[Profile PUT] Insert error:", insertError);
           return NextResponse.json({ 
             error: "No se pudo guardar el perfil: " + insertError.message,
             code: insertError.code 
           }, { status: 400 });
         }
         
-        console.log("[Profile PUT] Insert success:", insertResult);
         return NextResponse.json(insertResult);
       }
       
@@ -115,11 +103,9 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log("[Profile PUT] Success:", data);
     return NextResponse.json(data);
 
   } catch (error: any) {
-    console.error("[Profile PUT] Exception:", error);
     return NextResponse.json({ error: "Error interno: " + error.message }, { status: 500 });
   }
 }

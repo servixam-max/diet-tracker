@@ -8,7 +8,7 @@ interface ValidationRule {
   minLength?: number;
   maxLength?: number;
   pattern?: RegExp;
-  custom?: (value: any) => string | null;
+  custom?: (value: unknown) => string | null;
 }
 
 interface ValidationResult {
@@ -16,13 +16,11 @@ interface ValidationResult {
   error: string | null;
 }
 
-export function validateField(value: any, rules: ValidationRule): ValidationResult {
-  // Required check
+export function validateField(value: unknown, rules: ValidationRule): ValidationResult {
   if (rules.required && (value === null || value === undefined || value === '')) {
     return { isValid: false, error: 'Este campo es requerido' };
   }
 
-  // Number range validation
   if (typeof value === 'number' && rules.min !== undefined && value < rules.min) {
     return { isValid: false, error: `El valor mínimo es ${rules.min}` };
   }
@@ -30,7 +28,6 @@ export function validateField(value: any, rules: ValidationRule): ValidationResu
     return { isValid: false, error: `El valor máximo es ${rules.max}` };
   }
 
-  // String length validation
   if (typeof value === 'string') {
     if (rules.minLength && value.length < rules.minLength) {
       return { isValid: false, error: `Mínimo ${rules.minLength} caracteres` };
@@ -40,12 +37,10 @@ export function validateField(value: any, rules: ValidationRule): ValidationResu
     }
   }
 
-  // Pattern validation
   if (rules.pattern && typeof value === 'string' && !rules.pattern.test(value)) {
     return { isValid: false, error: 'Formato inválido' };
   }
 
-  // Custom validation
   if (rules.custom) {
     const customError = rules.custom(value);
     if (customError) {
@@ -56,20 +51,20 @@ export function validateField(value: any, rules: ValidationRule): ValidationResu
   return { isValid: true, error: null };
 }
 
-// Validaciones predefinidas comunes
 export const validators = {
   email: {
     required: true,
     pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    custom: (value: string) => {
-      if (!value.includes('@')) return 'Email inválido';
+    custom: (value: unknown) => {
+      if (typeof value !== 'string' || !value.includes('@')) return 'Email inválido';
       return null;
     },
   },
   password: {
     required: true,
     minLength: 6,
-    custom: (value: string) => {
+    custom: (value: unknown) => {
+      if (typeof value !== 'string') return 'Valor inválido';
       if (value.length < 6) return 'Mínimo 6 caracteres';
       if (!/[A-Za-z]/.test(value) || !/[0-9]/.test(value)) {
         return 'Debe incluir letras y números';
@@ -99,14 +94,18 @@ export const validators = {
   },
 };
 
-// Hook para validación de formularios
-export function useFormValidation(initialValues: Record<string, any>, validators: Record<string, ValidationRule>) {
-  const validateForm = (values: Record<string, any>) => {
+type FormValues = Record<string, unknown>;
+
+export function useFormValidation(
+  initialValues: FormValues,
+  validationRules: Record<string, ValidationRule>
+) {
+  const validateForm = (values: FormValues) => {
     const errors: Record<string, string> = {};
     let isValid = true;
 
-    Object.keys(validators).forEach((field) => {
-      const result = validateField(values[field], validators[field]);
+    Object.keys(validationRules).forEach((field) => {
+      const result = validateField(values[field], validationRules[field]);
       if (!result.isValid) {
         errors[field] = result.error || '';
         isValid = false;

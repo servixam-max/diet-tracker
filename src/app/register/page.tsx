@@ -198,7 +198,7 @@ export default function RegisterPage() {
             animate={{ y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            Únete a miles que ya(transformaron su vida
+            Únete a miles que ya transformaron su vida
           </motion.p>
         </motion.div>
 

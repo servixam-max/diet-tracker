@@ -26,16 +26,31 @@ export default function LoginPage() {
 
     try {
       if (isLogin) {
-        await login(email, password);
+        const result = await login(email, password);
+        if (result.error) {
+          setError(result.error);
+          showToast(result.error, "error");
+          triggerHaptic("heavy");
+          setLoading(false);
+          return;
+        }
         showToast("¡Bienvenido de vuelta!", "success");
       } else {
-        await register({ email, password, name });
+        const result = await register({ email, password, name });
+        if (result.error) {
+          setError(result.error);
+          showToast(result.error, "error");
+          triggerHaptic("heavy");
+          setLoading(false);
+          return;
+        }
         showToast("¡Cuenta creada exitosamente!", "success");
       }
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "Error al iniciar sesión");
-      showToast(err.message || "Error al iniciar sesión", "error");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Error al iniciar sesión";
+      setError(message);
+      showToast(message, "error");
       triggerHaptic("heavy");
     } finally {
       setLoading(false);

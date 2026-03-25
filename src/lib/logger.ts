@@ -3,24 +3,26 @@
 
 const isDev = process.env.NODE_ENV === 'development';
 
+type LogArgs = unknown[];
+
 export const logger = {
-  log: (...args: any[]) => {
+  log: (...args: LogArgs) => {
     if (isDev) {
       console.log(...args);
     }
   },
-  info: (...args: any[]) => {
+  info: (...args: LogArgs) => {
     if (isDev) {
       console.info(...args);
     }
   },
-  warn: (...args: any[]) => {
-    console.warn(...args); // Siempre mostrar warnings
+  warn: (...args: LogArgs) => {
+    console.warn(...args);
   },
-  error: (...args: any[]) => {
-    console.error(...args); // Siempre mostrar errores
+  error: (...args: LogArgs) => {
+    console.error(...args);
   },
-  debug: (...args: any[]) => {
+  debug: (...args: LogArgs) => {
     if (isDev) {
       console.debug(...args);
     }
