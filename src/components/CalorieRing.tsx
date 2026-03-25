@@ -70,7 +70,7 @@ export function CalorieRing({ current, target, size = 180, strokeWidth = 12 }: C
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3, duration: 0.5 }}
         >
-          {current.toLocaleString()}
+          {current.toLocaleString('es-ES')}
         </motion.span>
         <motion.span 
           className="text-xs text-zinc-500"
@@ -78,7 +78,7 @@ export function CalorieRing({ current, target, size = 180, strokeWidth = 12 }: C
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
-          de {target.toLocaleString()} kcal
+          de {target.toLocaleString('es-ES')} kcal
         </motion.span>
         <motion.span 
           className={`text-xs font-medium mt-1 ${isOver ? 'text-red-400' : 'text-green-400'}`}

@@ -125,7 +125,7 @@ export function AnimatedStatCard({
               className="text-3xl font-bold text-white"
               key={displayValue}
             >
-              {displayValue.toLocaleString()}
+              {displayValue.toLocaleString('es-ES')}
             </motion.span>
             <span className="text-sm text-zinc-500">{unit}</span>
           </div>

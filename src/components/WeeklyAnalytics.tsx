@@ -135,7 +135,7 @@ export function WeeklyAnalytics({ targetCalories, entries = [] }: WeeklyAnalytic
             <Flame size={16} className="text-orange-400" />
             <span className="text-xs text-zinc-400">Calorías totales</span>
           </div>
-          <p className="text-2xl font-bold">{totalCalories.toLocaleString()}</p>
+          <p className="text-2xl font-bold">{totalCalories.toLocaleString('es-ES')}</p>
           <p className="text-xs text-zinc-500">esta semana</p>
         </motion.div>
       </div>

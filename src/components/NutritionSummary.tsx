@@ -114,9 +114,9 @@ export function NutritionSummary({ userId }: NutritionSummaryProps) {
             <p className="text-sm text-zinc-400">Calorías de hoy</p>
             <div className="flex items-baseline gap-2">
               <span className={`text-3xl font-bold ${calorieStatus.color}`}>
-                {today.calories.toLocaleString()}
+                {today.calories.toLocaleString('es-ES')}
               </span>
-              <span className="text-zinc-500">/ {goals.calories.toLocaleString()} kcal</span>
+              <span className="text-zinc-500">/ {goals.calories.toLocaleString('es-ES')} kcal</span>
             </div>
           </div>
           <div className={`p-2 rounded-xl ${
