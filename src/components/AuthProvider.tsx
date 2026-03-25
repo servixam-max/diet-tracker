@@ -85,9 +85,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const demoUser = localStorage.getItem('demo-user');
       if (demoUser) {
         setUser(JSON.parse(demoUser));
-        setLoading(false);
-        return;
+      } else {
+        // Default demo user if not set
+        const defaultDemoUser = {
+          id: 'demo-user',
+          email: 'demo@diettracker.app',
+          name: 'Usuario Demo'
+        };
+        localStorage.setItem('demo-user', JSON.stringify(defaultDemoUser));
+        setUser(defaultDemoUser);
       }
+      setLoading(false);
+      return;
     }
     
     refreshUser();
