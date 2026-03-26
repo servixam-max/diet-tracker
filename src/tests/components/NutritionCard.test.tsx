@@ -21,7 +21,7 @@ describe('NutritionCard', () => {
     render(<NutritionCard {...defaultProps} />);
     
     expect(screen.getByText('1500')).toBeInTheDocument();
-    expect(screen.getByText('2000')).toBeInTheDocument();
+    expect(screen.getByText(/\/ 2000/)).toBeInTheDocument();
     expect(screen.getByText('75%')).toBeInTheDocument();
     expect(screen.getByText('120g')).toBeInTheDocument();
     expect(screen.getByText('180g')).toBeInTheDocument();

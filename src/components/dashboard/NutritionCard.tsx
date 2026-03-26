@@ -26,7 +26,10 @@ export function NutritionCard({
 }: NutritionCardProps) {
   if (isLoading) {
     return (
-      <div className="relative overflow-hidden rounded-3xl p-6 bg-white/5 border border-white/10">
+      <div 
+        className="relative overflow-hidden rounded-3xl p-6 bg-white/5 border border-white/10"
+        data-testid="nutrition-card-skeleton"
+      >
         <div className="animate-pulse space-y-4">
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded bg-white/10" />
@@ -112,6 +115,7 @@ export function NutritionCard({
               animate={{ strokeDashoffset: 2 * Math.PI * 45 - (progress / 100) * 2 * Math.PI * 45 }}
               transition={{ duration: 1.5, ease: "easeOut" }}
               style={{ filter: `drop-shadow(0 0 6px ${isOverTarget ? "#ef4444" : "#22c55e"})` }}
+              data-testid="progress-ring"
             />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
