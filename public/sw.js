@@ -11,13 +11,6 @@ const STATIC_ASSETS = [
   '/apple-touch-icon.png',
 ];
 
-const CACHE_STRATEGIES = {
-  static: 'cache-first',
-  api: 'network-first',
-  images: 'cache-first',
-  fonts: 'cache-first',
-};
-
 // Install
 self.addEventListener('install', (event) => {
   event.waitUntil(

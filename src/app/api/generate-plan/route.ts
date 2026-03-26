@@ -19,15 +19,6 @@ interface GeneratedDay {
   totalProtein: number;
 }
 
-interface PlanTemplate {
-  id: string;
-  userId: string;
-  name: string;
-  planData: GeneratedDay[];
-  targetCalories: number;
-  createdAt: string;
-}
-
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -60,7 +51,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();

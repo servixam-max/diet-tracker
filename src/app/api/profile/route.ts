@@ -38,7 +38,7 @@ export async function GET() {
 
     return NextResponse.json(profile);
 
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }
@@ -105,7 +105,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json(data);
 
-  } catch (error: any) {
-    return NextResponse.json({ error: "Error interno: " + error.message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }

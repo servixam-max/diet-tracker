@@ -6,7 +6,6 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const recipeIds = searchParams.get("recipes");
   const days = searchParams.get("days") || "7";
-  const caloriesPerDay = searchParams.get("caloriesPerDay");
 
   // Si se pasan IDs específicos, usar esas recetas
   let selectedRecipes: Recipe[] = [];
@@ -16,7 +15,6 @@ export async function GET(request: Request) {
     selectedRecipes = RECIPES.filter(r => ids.includes(r.id));
   } else {
     // Generar plan semanal automático basado en calorías
-    const targetCalories = caloriesPerDay ? parseInt(caloriesPerDay) : 2000;
     const numDays = parseInt(days);
     
     // Seleccionar recetas variadas para cubrir necesidades calóricas
@@ -49,7 +47,7 @@ export async function GET(request: Request) {
   // Agrupar por supermercado (usar el supermercado de la receta como fallback)
   const groupedBySupermarket: Record<string, typeof shoppingList> = {};
   
-  selectedRecipes.forEach((recipe, recipeIndex) => {
+  selectedRecipes.forEach((recipe) => {
     recipe.ingredients.forEach((ing) => {
       const supermarket = ing.supermarket || recipe.supermarket;
       if (!groupedBySupermarket[supermarket]) {

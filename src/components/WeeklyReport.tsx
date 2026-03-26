@@ -53,7 +53,16 @@ export function WeeklyReport({ userId }: WeeklyReportProps) {
 
   if (!report) return null;
 
-  const StatCard = ({ icon: Icon, label, value, unit, change, color }: any) => (
+  interface StatCardProps {
+    icon: React.ComponentType<{ size?: number; className?: string }>;
+    label: string;
+    value: number | string;
+    unit: string;
+    change?: number;
+    color: string;
+  }
+
+  const StatCard = ({ icon: Icon, label, value, unit, change, color }: StatCardProps) => (
     <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
       <div className="flex items-center gap-2 mb-2">
         <Icon size={18} className={color} />

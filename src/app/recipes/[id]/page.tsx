@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { useParams, useRouter } from "next/navigation";
 import { 
   Heart, Share2, Plus, Clock, Flame, Users, ChefHat, 
-  ShoppingCart, ArrowLeft, Star, TrendingUp 
+  ShoppingCart, ArrowLeft, TrendingUp 
 } from "lucide-react";
 import { ParticleBackground } from "@/components/ParticleBackground";
 import { BottomNavBar } from "@/components/BottomNavBar";
@@ -25,19 +25,24 @@ export default function RecipeDetailPage() {
   useEffect(() => {
     const foundRecipe = RECIPES.find(r => r.id === recipeId);
     if (foundRecipe) {
-      setRecipe(foundRecipe);
       // Find similar recipes based on supermarket, calories, and meal type
       const similar = RECIPES
         .filter(r => 
           r.id !== recipeId &&
           (r.supermarket === foundRecipe.supermarket ||
            Math.abs(r.calories - foundRecipe.calories) < 100 ||
-           r.mealType.some(t => foundRecipe.mealType.includes(t as any)))
+           r.mealType.some(t => foundRecipe.mealType.includes(t)))
         )
         .slice(0, 4);
-      setSimilarRecipes(similar);
+      // Set state in separate calls to avoid cascading renders warning
+      requestAnimationFrame(() => {
+        setRecipe(foundRecipe);
+        setSimilarRecipes(similar);
+        setIsLoading(false);
+      });
+    } else {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, [recipeId]);
 
   function toggleFavorite() {

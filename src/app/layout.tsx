@@ -1,12 +1,18 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { setupErrorTracking } from "@/lib/errorTracking";
 import { BottomNavBar } from "@/components/BottomNavBar";
 import { AuthProvider } from "@/components/AuthProvider";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { ParticleBackground, FloatingOrbs } from "@/components/ParticleBackground";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToastProvider } from "@/components/ui/Feedback";
+
+// Setup error tracking
+if (typeof window !== "undefined") {
+  setupErrorTracking();
+}
 
 const inter = Inter({ 
   subsets: ["latin"],

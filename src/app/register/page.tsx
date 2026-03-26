@@ -8,7 +8,7 @@ import { useAuth } from "@/components/AuthProvider";
 import Particles from "@tsparticles/react";
 import { initParticlesEngine } from "@tsparticles/react";
 import { loadSlim } from "@tsparticles/slim";
-import { Sparkles, Mail, Lock, Eye, EyeOff, User, ArrowRight, Loader2, Check, X, UserPlus } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, Check, X, UserPlus } from "lucide-react";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");

@@ -1,57 +1,54 @@
 // Error Tracking Setup for Production
-// Captures and logs errors with context for debugging
-
-import { logger } from './logger';
+// Lightweight error tracking without external dependencies
 
 interface ErrorContext {
-  message: string;
-  timestamp: string;
-  source?: string;
-  stack?: string;
   userId?: string;
+  component?: string;
+  action?: string;
   extra?: Record<string, unknown>;
 }
 
+interface TrackedError {
+  error: Error;
+  context?: ErrorContext;
+  timestamp: number;
+}
+
 class ErrorTracker {
-  private errors: ErrorContext[] = [];
-  private maxErrors = 100;
+  private errors: TrackedError[] = [];
+  private maxErrors = 50;
 
   /**
    * Track an error with optional context
    */
-  track(error: Error | string, context?: Partial<ErrorContext>) {
-    const errorContext: ErrorContext = {
-      message: error instanceof Error ? error.message : error,
-      timestamp: new Date().toISOString(),
-      source: context?.source,
-      stack: error instanceof Error ? error.stack : undefined,
-      userId: context?.userId,
-      extra: context?.extra,
+  track(error: Error | string, context?: ErrorContext) {
+    const trackedError: TrackedError = {
+      error: error instanceof Error ? error : new Error(error),
+      context,
+      timestamp: Date.now(),
     };
 
     // Store error in memory (limited)
-    this.errors.push(errorContext);
+    this.errors.push(trackedError);
     if (this.errors.length > this.maxErrors) {
       this.errors.shift();
     }
 
-    // Log error (always in production, filtered in dev via logger)
-    logger.error(`[ErrorTracker] ${errorContext.message}`, {
-      source: errorContext.source,
-      timestamp: errorContext.timestamp,
-    });
+    // Always log in development
+    if (process.env.NODE_ENV === "development") {
+      console.error("[ErrorTracker]", trackedError.error, context);
+    }
 
-    // In production, you could send to external service here
-    // e.g., Sentry, LogRocket, etc.
-    if (process.env.NODE_ENV === 'production') {
-      this.sendToExternalService?.(errorContext);
+    // In production, send to external service
+    if (process.env.NODE_ENV === "production") {
+      this.sendToExternalService(trackedError);
     }
   }
 
   /**
    * Get recent errors for debugging
    */
-  getRecentErrors(limit = 10): ErrorContext[] {
+  getRecentErrors(limit = 10): TrackedError[] {
     return this.errors.slice(-limit);
   }
 
@@ -63,9 +60,13 @@ class ErrorTracker {
   }
 
   /**
-   * Optional: Override this to send to external service
+   * Send to external service (override in production)
    */
-  protected sendToExternalService?: (context: ErrorContext) => void;
+  private sendToExternalService(error: TrackedError) {
+    // TODO: Integrate with Sentry, LogRocket, or custom endpoint
+    // Example: fetch('/api/log-error', { method: 'POST', body: JSON.stringify(error) })
+    console.error("[Production Error]", error.error, error.context);
+  }
 }
 
 // Global error tracker instance
@@ -73,38 +74,42 @@ export const errorTracker = new ErrorTracker();
 
 /**
  * Setup global error handlers for production
- * Call this once at app initialization
  */
 export function setupErrorTracking() {
+  if (typeof window === "undefined") return;
+
   // Unhandled promise rejections
-  window.addEventListener('unhandledrejection', (event) => {
+  window.addEventListener("unhandledrejection", (event) => {
     event.preventDefault();
     errorTracker.track(event.reason, {
-      source: 'unhandledrejection',
+      action: "unhandledrejection",
     });
   });
 
   // Global errors
-  window.addEventListener('error', (event) => {
-    errorTracker.track(event.message, {
-      source: event.filename || 'global',
-      stack: event.error?.stack,
+  window.addEventListener("error", (event) => {
+    errorTracker.track(event.error || new Error(event.message), {
+      action: "global_error",
+      extra: {
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+      },
     });
   });
 
-  // Console error capture in production
-  if (process.env.NODE_ENV === 'production') {
+  // Capture console.error in production
+  if (process.env.NODE_ENV === "production") {
     const originalConsoleError = console.error;
     console.error = (...args) => {
-      errorTracker.track(args[0], {
-        source: 'console',
-        extra: { args: args.slice(1) },
-      });
+      if (args[0] instanceof Error) {
+        errorTracker.track(args[0], { action: "console_error" });
+      }
       originalConsoleError.apply(console, args);
     };
   }
 
-  logger.log('[ErrorTracking] Setup complete');
+  console.log("[ErrorTracking] Setup complete");
 }
 
 export default errorTracker;

@@ -39,7 +39,8 @@ export function MotivationQuote({ userId }: MotivationQuoteProps) {
     light();
     
     setTimeout(() => {
-      const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+      const randomIndex = Math.floor(Math.random() * quotes.length);
+      const randomQuote = quotes[randomIndex];
       setQuote(randomQuote);
       setLiked(false);
       setIsRefreshing(false);

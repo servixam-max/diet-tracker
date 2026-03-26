@@ -70,7 +70,11 @@ function useAnimatedCounter(target: number, duration = 1500) {
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<{
+    name?: string;
+    daily_calories?: number;
+    macros?: { protein: number; carbs: number; fat: number };
+  } | null>(null);
   const [meals, setMeals] = useState<Meal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -101,7 +105,7 @@ export default function DashboardPage() {
       if (mealsRes.ok) {
         const mealsData = await mealsRes.json();
         if (mealsData && mealsData.length > 0) {
-          const formattedMeals = mealsData.map((log: any) => ({
+          const formattedMeals = mealsData.map((log: { meal_type: string; description: string; calories: number; protein_g?: number; carbs_g?: number; fat_g?: number; created_at: string }) => ({
             type: mealLabels[log.meal_type] || log.meal_type,
             name: log.description,
             calories: log.calories,
@@ -116,8 +120,8 @@ export default function DashboardPage() {
           setMeals([]);
         }
       }
-    } catch (error) {
-      console.error('Error fetching data:', error);
+    } catch {
+      // Silent error handling
     } finally {
       setIsLoading(false);
     }

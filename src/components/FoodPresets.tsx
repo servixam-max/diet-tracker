@@ -44,8 +44,8 @@ function FoodPresetsComponent({ mealType, onAddFood, userId }: FoodPresetsProps)
     if (saved) {
       try {
         setPresets(JSON.parse(saved));
-      } catch (e) {
-        console.error("Error loading presets:", e);
+      } catch {
+        // Ignore parse errors
       }
     }
   }, [userId]);
