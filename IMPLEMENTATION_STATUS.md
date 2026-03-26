@@ -46,20 +46,22 @@
 
 ---
 
-## 🔄 Sprint 7: UX Móvil Avanzado (IN PROGRESS)
+## ✅ Sprint 7: UX Móvil Avanzado (COMPLETED)
 
 ### Tasks
-- [ ] Pull-to-refresh real
-- [ ] Haptic feedback
-- [ ] Swipe actions
-- [ ] Gesture navigation
-- [ ] Loading skeletons improved
-- [ ] FPS optimization (60fps target)
+- [x] Pull-to-refresh real (dashboard/page.tsx - gesture nativo con Framer Motion)
+- [x] Haptic feedback (useHaptic.ts - 5 patrones: light, medium, success, warning, error)
+- [x] Swipe actions (MealCard.tsx, ShoppingList.tsx - editar/eliminar con gestos)
+- [x] Gesture navigation (drag-y para refresh, drag-x para swipe)
+- [x] Loading skeletons improved (MealCard isLoading state)
+- [x] FPS optimization (Framer Motion springs, stagger animations)
 
-### Files to Modify
-- `src/components/dashboard/MealCard.tsx`
-- `src/components/dashboard/MealList.tsx`
-- `src/components/shopping/ShoppingList.tsx`
+### Files Modified
+- `src/components/PullToRefresh.tsx` - Componente reusable
+- `src/hooks/useHaptic.ts` - Hook con vibraciones nativas
+- `src/components/MealCard.tsx` - Swipe actions + expand/collapse
+- `src/components/ShoppingList.tsx` - Swipe + check/uncheck
+- `src/app/dashboard/page.tsx` - Pull-to-refresh integrado
 
 ---
 
