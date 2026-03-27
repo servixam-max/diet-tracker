@@ -1,14 +1,30 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ChefHat, Clock, Users, Flame, Search, Filter, X, Plus, Check, 
   Heart, Share2, BookOpen, ShoppingCart, FilterX 
 } from "lucide-react";
 import { useHaptic } from "@/hooks/useHaptic";
-import { Recipe, RECIPES } from "@/data/recipes";
+
+interface Recipe {
+  id: string;
+  name: string;
+  description: string;
+  image_url: string;
+  prep_time_minutes: number;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  servings: number;
+  supermarket: string;
+  ingredients: { item: string; amount: string }[];
+  instructions: string[];
+  tags: string[];
+}
 
 interface RecipeBookProps {
   userId: string;
@@ -18,87 +34,94 @@ interface RecipeBookProps {
 
 export function RecipeBook({ userId, onAddToMealPlan, onAddToShoppingList }: RecipeBookProps) {
   const router = useRouter();
-  const [allRecipes] = useState<Recipe[]>(RECIPES);
+  const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSupermarket, setSelectedSupermarket] = useState<string | null>(null);
-  const [selectedMealType, setSelectedMealType] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [likedRecipes, setLikedRecipes] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
-  const { light, success } = useHaptic();
+  const { light, success } = useHaptic;
 
-  // Obtener supermercados únicos
+  // Fetch recipes from Supabase
+  useEffect(() => {
+    async function fetchRecipes() {
+      try {
+        const response = await fetch('/api/recipes');
+        if (response.ok) {
+          const data = await response.json();
+          setAllRecipes(data);
+        }
+      } catch (error) {
+        console.error('Error fetching recipes:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchRecipes();
+  }, []);
+
+  // Get unique supermarkets
   const supermarkets = [...new Set(allRecipes.map(r => r.supermarket))];
   
-  // Obtener tags únicos
+  // Get unique tags
   const allTags = [...new Set(allRecipes.flatMap(r => r.tags))];
-  
-  // Obtener tipos de comida únicos
-  const mealTypes = [...new Set(allRecipes.flatMap(r => r.mealType))];
 
-  // Filtrar recetas
+  // Filter recipes
   const filteredRecipes = allRecipes.filter(recipe => {
     const matchesSearch = searchQuery === "" || 
       recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       recipe.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       recipe.ingredients.some(i => i.item.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    const matchesSupermarket = !selectedSupermarket || recipe.supermarket === selectedSupermarket;
-    const matchesMealType = !selectedMealType || recipe.mealType.includes(selectedMealType as any);
+    const matchesSupermarket = !selectedSupermarket || recipe.supermarket.toLowerCase().includes(selectedSupermarket.toLowerCase());
     const matchesTag = !selectedTag || recipe.tags.includes(selectedTag);
     
-    return matchesSearch && matchesSupermarket && matchesMealType && matchesTag;
+    return matchesSearch && matchesSupermarket && matchesTag;
   });
 
   function toggleLike(id: string) {
-    light();
     setLikedRecipes(prev => {
       const newSet = new Set(prev);
       if (newSet.has(id)) {
         newSet.delete(id);
       } else {
         newSet.add(id);
-        success();
       }
       return newSet;
     });
   }
 
   function clearFilters() {
-    light();
     setSelectedSupermarket(null);
-    setSelectedMealType(null);
     setSelectedTag(null);
     setSearchQuery("");
   }
 
   function getSupermarketColor(supermarket: string) {
-    switch (supermarket) {
-      case "Mercadona": return "bg-orange-500/10 text-orange-400 border-orange-500/20";
-      case "Lidl": return "bg-red-500/10 text-red-400 border-red-500/20";
-      case "Aldi": return "bg-blue-500/10 text-blue-400 border-blue-500/20";
-      case "Family Cash": return "bg-green-500/10 text-green-400 border-green-500/20";
+    switch (supermarket.toLowerCase()) {
+      case "mercadona": return "bg-orange-500/10 text-orange-400 border-orange-500/20";
+      case "lidl": return "bg-red-500/10 text-red-400 border-red-500/20";
+      case "aldi": return "bg-blue-500/10 text-blue-400 border-blue-500/20";
+      case "familycash": return "bg-green-500/10 text-green-400 border-green-500/20";
       default: return "bg-zinc-500/10 text-zinc-400";
     }
   }
 
-  function getMealTypeIcon(type: string) {
-    switch (type) {
-      case "desayuno": return "🌅";
-      case "comida": return "🍽️";
-      case "cena": return "🌙";
-      case "snack": return "🍎";
-      default: return "🍴";
-    }
+  function getMealTypeIcon(tags: string[]) {
+    if (tags.includes('desayuno')) return '🌅';
+    if (tags.includes('comida')) return '🍽️';
+    if (tags.includes('cena')) return '🌙';
+    if (tags.includes('snack')) return '🍎';
+    return '🍴';
   }
 
   function handleShare(recipe: Recipe) {
-    light();
     const text = `🍳 ${recipe.name}
 ${recipe.description}
-⏱️ ${recipe.prepTime + recipe.cookTime} min
-🔥 ${recipe.calories} kcal | ${recipe.protein}g P | ${recipe.carbs}g C | ${recipe.fat}g G
+⏱️ ${recipe.prep_time_minutes} min
+🔥 ${recipe.calories} kcal | ${recipe.protein_g}g P | ${recipe.carbs_g}g C | ${recipe.fat_g}g G
 🏪 ${recipe.supermarket}
 
 📝 Ingredientes:
@@ -108,11 +131,19 @@ ${recipe.ingredients.map(i => `• ${i.item} (${i.amount})`).join("\n")}`;
       navigator.share({ title: recipe.name, text });
     } else {
       navigator.clipboard.writeText(text);
-      success();
     }
   }
 
-  const hasActiveFilters = selectedSupermarket || selectedMealType || selectedTag || searchQuery;
+  const hasActiveFilters = selectedSupermarket || selectedTag || searchQuery;
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-12">
+        <ChefHat size={48} className="mx-auto text-zinc-600 mb-4 animate-pulse" />
+        <p className="text-zinc-400">Cargando recetas...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -125,7 +156,7 @@ ${recipe.ingredients.map(i => `• ${i.item} (${i.amount})`).join("\n")}`;
         <div className="flex items-center gap-2">
           <span className="text-sm text-zinc-500">{filteredRecipes.length} recetas</span>
           <button
-            onClick={() => { light(); setShowFilters(!showFilters); }}
+            onClick={() => setShowFilters(!showFilters)}
             className={`p-2 rounded-lg transition-colors ${
               showFilters ? "bg-amber-500/20 text-amber-400" : "bg-white/5 text-zinc-400"
             }`}
@@ -172,7 +203,7 @@ ${recipe.ingredients.map(i => `• ${i.item} (${i.amount})`).join("\n")}`;
                   {supermarkets.map(s => (
                     <button
                       key={s}
-                      onClick={() => { light(); setSelectedSupermarket(selectedSupermarket === s ? null : s); }}
+                      onClick={() => setSelectedSupermarket(selectedSupermarket === s ? null : s)}
                       className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
                         selectedSupermarket === s
                           ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
@@ -185,35 +216,14 @@ ${recipe.ingredients.map(i => `• ${i.item} (${i.amount})`).join("\n")}`;
                 </div>
               </div>
 
-              {/* Meal type filter */}
-              <div>
-                <p className="text-xs text-zinc-500 mb-2 uppercase tracking-wide">Tipo de comida</p>
-                <div className="flex flex-wrap gap-2">
-                  {mealTypes.map(type => (
-                    <button
-                      key={type}
-                      onClick={() => { light(); setSelectedMealType(selectedMealType === type ? null : type); }}
-                      className={`px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1 ${
-                        selectedMealType === type
-                          ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
-                          : "bg-white/5 text-zinc-400 border border-white/10"
-                      }`}
-                    >
-                      <span>{getMealTypeIcon(type)}</span>
-                      <span className="capitalize">{type}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {/* Tags filter */}
               <div>
                 <p className="text-xs text-zinc-500 mb-2 uppercase tracking-wide">Etiquetas</p>
                 <div className="flex flex-wrap gap-2">
-                  {allTags.slice(0, 10).map(tag => (
+                  {allTags.slice(0, 15).map(tag => (
                     <button
                       key={tag}
-                      onClick={() => { light(); setSelectedTag(selectedTag === tag ? null : tag); }}
+                      onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
                       className={`px-2 py-1 rounded-full text-xs transition-colors ${
                         selectedTag === tag
                           ? "bg-amber-500/20 text-amber-400"
@@ -244,7 +254,7 @@ ${recipe.ingredients.map(i => `• ${i.item} (${i.amount})`).join("\n")}`;
       {/* Quick filters (horizontal scroll) */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
         <button
-          onClick={() => { light(); setSelectedSupermarket(null); setSelectedMealType(null); setSelectedTag(null); }}
+          onClick={() => { setSelectedSupermarket(null); setSelectedTag(null); }}
           className={`px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors ${
             !hasActiveFilters
               ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
@@ -256,7 +266,7 @@ ${recipe.ingredients.map(i => `• ${i.item} (${i.amount})`).join("\n")}`;
         {supermarkets.map(s => (
           <button
             key={s}
-            onClick={() => { light(); setSelectedSupermarket(selectedSupermarket === s ? null : s); }}
+            onClick={() => setSelectedSupermarket(selectedSupermarket === s ? null : s)}
             className={`px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors ${
               selectedSupermarket === s
                 ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
@@ -289,12 +299,12 @@ ${recipe.ingredients.map(i => `• ${i.item} (${i.amount})`).join("\n")}`;
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: Math.min(index * 0.03, 0.3) }}
-              onClick={() => { light(); router.push(`/recipes/${recipe.id}`); }}
+              onClick={() => router.push(`/recipes/${recipe.id}`)}
               whileTap={{ scale: 0.98 }}
             >
               <div className="aspect-[4/3] relative">
                 <img
-                  src={recipe.image}
+                  src={recipe.image_url}
                   alt={recipe.name}
                   className="w-full h-full object-cover"
                   loading="lazy"
@@ -313,9 +323,7 @@ ${recipe.ingredients.map(i => `• ${i.item} (${i.amount})`).join("\n")}`;
                   {recipe.supermarket}
                 </span>
                 <div className="absolute bottom-2 left-2 flex gap-1">
-                  {recipe.mealType.slice(0, 2).map(type => (
-                    <span key={type} className="text-sm">{getMealTypeIcon(type)}</span>
-                  ))}
+                  <span className="text-sm">{getMealTypeIcon(recipe.tags)}</span>
                 </div>
               </div>
               <div className="p-3">
@@ -326,7 +334,7 @@ ${recipe.ingredients.map(i => `• ${i.item} (${i.amount})`).join("\n")}`;
                     {recipe.calories} kcal
                   </span>
                   <span className="text-zinc-600">•</span>
-                  <span>{recipe.protein}g P</span>
+                  <span>{recipe.protein_g}g P</span>
                 </div>
               </div>
             </motion.div>
@@ -361,7 +369,7 @@ ${recipe.ingredients.map(i => `• ${i.item} (${i.amount})`).join("\n")}`;
               {/* Hero image */}
               <div className="relative h-56">
                 <img
-                  src={selectedRecipe.image}
+                  src={selectedRecipe.image_url}
                   alt={selectedRecipe.name}
                   className="w-full h-full object-cover"
                 />
@@ -393,7 +401,7 @@ ${recipe.ingredients.map(i => `• ${i.item} (${i.amount})`).join("\n")}`;
                 <div className="grid grid-cols-4 gap-3">
                   <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-center">
                     <Clock size={18} className="text-cyan-400 mx-auto mb-1" />
-                    <p className="text-lg font-bold">{selectedRecipe.prepTime + selectedRecipe.cookTime}</p>
+                    <p className="text-lg font-bold">{selectedRecipe.prep_time_minutes}</p>
                     <p className="text-xs text-zinc-500">min</p>
                   </div>
                   <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-center">
@@ -403,7 +411,7 @@ ${recipe.ingredients.map(i => `• ${i.item} (${i.amount})`).join("\n")}`;
                   </div>
                   <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-center">
                     <ChefHat size={18} className="text-green-400 mx-auto mb-1" />
-                    <p className="text-lg font-bold">{selectedRecipe.protein}g</p>
+                    <p className="text-lg font-bold">{selectedRecipe.protein_g}g</p>
                     <p className="text-xs text-zinc-500">proteína</p>
                   </div>
                   <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-center">
@@ -420,57 +428,40 @@ ${recipe.ingredients.map(i => `• ${i.item} (${i.amount})`).join("\n")}`;
                     <motion.div
                       className="bg-blue-500"
                       initial={{ width: 0 }}
-                      animate={{ width: `${(selectedRecipe.protein / (selectedRecipe.protein + selectedRecipe.carbs + selectedRecipe.fat)) * 100}%` }}
+                      animate={{ width: `${(selectedRecipe.protein_g / (selectedRecipe.protein_g + selectedRecipe.carbs_g + selectedRecipe.fat_g)) * 100}%` }}
                       transition={{ duration: 0.5, delay: 0.2 }}
                     />
                     <motion.div
                       className="bg-yellow-500"
                       initial={{ width: 0 }}
-                      animate={{ width: `${(selectedRecipe.carbs / (selectedRecipe.protein + selectedRecipe.carbs + selectedRecipe.fat)) * 100}%` }}
+                      animate={{ width: `${(selectedRecipe.carbs_g / (selectedRecipe.protein_g + selectedRecipe.carbs_g + selectedRecipe.fat_g)) * 100}%` }}
                       transition={{ duration: 0.5, delay: 0.3 }}
                     />
                     <motion.div
                       className="bg-red-500"
                       initial={{ width: 0 }}
-                      animate={{ width: `${(selectedRecipe.fat / (selectedRecipe.protein + selectedRecipe.carbs + selectedRecipe.fat)) * 100}%` }}
+                      animate={{ width: `${(selectedRecipe.fat_g / (selectedRecipe.protein_g + selectedRecipe.carbs_g + selectedRecipe.fat_g)) * 100}%` }}
                       transition={{ duration: 0.5, delay: 0.4 }}
                     />
                   </div>
                   <div className="flex justify-between mt-1 text-xs text-zinc-500">
-                    <span>Proteína {selectedRecipe.protein}g</span>
-                    <span>Carbos {selectedRecipe.carbs}g</span>
-                    <span>Grasa {selectedRecipe.fat}g</span>
+                    <span>Proteína {selectedRecipe.protein_g}g</span>
+                    <span>Carbos {selectedRecipe.carbs_g}g</span>
+                    <span>Grasa {selectedRecipe.fat_g}g</span>
                   </div>
                 </div>
 
-                {/* Meal type badges */}
-                <div className="flex gap-2">
-                  {selectedRecipe.mealType.map(type => (
-                    <span key={type} className="px-3 py-1 rounded-full bg-white/5 text-sm flex items-center gap-1">
-                      <span>{getMealTypeIcon(type)}</span>
-                      <span className="capitalize">{type}</span>
-                    </span>
-                  ))}
-                  <span className={`px-3 py-1 rounded-full text-sm ${
-                    selectedRecipe.difficulty === "Fácil" ? "bg-green-500/10 text-green-400" :
-                    selectedRecipe.difficulty === "Media" ? "bg-yellow-500/10 text-yellow-400" :
-                    "bg-red-500/10 text-red-400"
-                  }`}>
-                    {selectedRecipe.difficulty}
-                  </span>
-                </div>
-
-                {/* Description */}
-                <p className="text-zinc-400 leading-relaxed">{selectedRecipe.description}</p>
-
                 {/* Tags */}
                 <div className="flex flex-wrap gap-2">
-                  {selectedRecipe.tags.map(tag => (
+                  {selectedRecipe.tags.slice(0, 5).map(tag => (
                     <span key={tag} className="px-3 py-1 rounded-full bg-white/5 text-zinc-400 text-sm">
                       #{tag}
                     </span>
                   ))}
                 </div>
+
+                {/* Description */}
+                <p className="text-zinc-400 leading-relaxed">{selectedRecipe.description}</p>
 
                 {/* Ingredients */}
                 <div>
@@ -533,7 +524,7 @@ ${recipe.ingredients.map(i => `• ${i.item} (${i.amount})`).join("\n")}`;
 
                   {onAddToMealPlan && (
                     <motion.button
-                      onClick={() => { success(); onAddToMealPlan(selectedRecipe); setSelectedRecipe(null); }}
+                      onClick={() => { onAddToMealPlan(selectedRecipe); setSelectedRecipe(null); }}
                       className="flex-1 py-3 rounded-xl font-medium bg-amber-500 text-black flex items-center justify-center gap-2"
                       whileTap={{ scale: 0.98 }}
                     >
@@ -545,7 +536,7 @@ ${recipe.ingredients.map(i => `• ${i.item} (${i.amount})`).join("\n")}`;
 
                 {onAddToShoppingList && (
                   <motion.button
-                    onClick={() => { success(); onAddToShoppingList(selectedRecipe); }}
+                    onClick={() => { onAddToShoppingList(selectedRecipe); }}
                     className="w-full py-3 rounded-xl font-medium bg-green-500/20 text-green-400 border border-green-500/30 flex items-center justify-center gap-2"
                     whileTap={{ scale: 0.98 }}
                   >

@@ -5,7 +5,67 @@
 // - Calorie distribution: 20% breakfast, 35% lunch, 15% snack, 30% dinner
 // - Protein distribution throughout the day
 
-import { RECIPES, Recipe } from "@/data/recipes";
+// Recipe interface matching Supabase schema
+interface Recipe {
+  id: string;
+  name: string;
+  description: string;
+  image_url: string;
+  prep_time_minutes: number;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  servings: number;
+  supermarket: string;
+  ingredients: { item: string; amount: string }[];
+  instructions: string[];
+  tags: string[];
+}
+
+// Static fallback recipes (small set for demo)
+const RECIPES: Recipe[] = [];
+
+// Fetch recipes from Supabase at runtime
+export async function fetchRecipesFromSupabase(): Promise<Recipe[]> {
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    
+    const response = await fetch(`${supabaseUrl}/rest/v1/recipes?select=*&limit=500`, {
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+      },
+    });
+    
+    if (!response.ok) {
+      console.error('Failed to fetch recipes:', response.status);
+      return RECIPES;
+    }
+    
+    const data = await response.json();
+    return data.map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      description: r.description,
+      image_url: r.image_url,
+      prep_time_minutes: r.prep_time_minutes,
+      calories: r.calories,
+      protein_g: r.protein_g,
+      carbs_g: r.carbs_g,
+      fat_g: r.fat_g,
+      servings: r.servings,
+      supermarket: r.supermarket,
+      ingredients: r.ingredients,
+      instructions: r.instructions,
+      tags: r.tags,
+    }));
+  } catch (error) {
+    console.error('Error fetching recipes:', error);
+    return RECIPES;
+  }
+}
 
 const CALORIE_DISTRIBUTION = {
   breakfast: 0.20,

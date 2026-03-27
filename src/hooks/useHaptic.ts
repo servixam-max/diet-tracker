@@ -3,33 +3,29 @@ import { useCallback } from "react";
 
 export function useHaptic() {
   const light = useCallback(() => {
-    if (typeof window !== "undefined" && "vibrate" in navigator) {
-      navigator.vibrate(10);
-    }
+    // Disabled - too distracting
+    // if (typeof window !== "undefined" && "vibrate" in navigator) {
+    //   navigator.vibrate(5);
+    // }
   }, []);
 
   const medium = useCallback(() => {
-    if (typeof window !== "undefined" && "vibrate" in navigator) {
-      navigator.vibrate(25);
-    }
+    // Disabled - too distracting
+    // if (typeof window !== "undefined" && "vibrate" in navigator) {
+    //   navigator.vibrate(10);
+    // }
   }, []);
 
   const success = useCallback(() => {
-    if (typeof window !== "undefined" && "vibrate" in navigator) {
-      navigator.vibrate([10, 50, 10]);
-    }
+    // Disabled - too distracting
   }, []);
 
   const warning = useCallback(() => {
-    if (typeof window !== "undefined" && "vibrate" in navigator) {
-      navigator.vibrate([50, 30, 50]);
-    }
+    // Disabled - too distracting
   }, []);
 
   const error = useCallback(() => {
-    if (typeof window !== "undefined" && "vibrate" in navigator) {
-      navigator.vibrate([100, 50, 100, 50, 100]);
-    }
+    // Disabled - too distracting
   }, []);
 
   return { light, medium, success, warning, error };
