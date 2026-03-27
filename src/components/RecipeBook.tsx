@@ -42,7 +42,7 @@ export function RecipeBook({ userId, onAddToMealPlan, onAddToShoppingList }: Rec
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [likedRecipes, setLikedRecipes] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
-  const { light, success } = useHaptic;
+  const { light, success } = useHaptic();
 
   // Fetch recipes from Supabase
   useEffect(() => {
