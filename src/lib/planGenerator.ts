@@ -246,9 +246,9 @@ function generatePlan(options: PlanGeneratorOptions): GeneratedDay[] {
           recipeId: selected.id,
           name: selected.name,
           calories: selected.calories,
-          protein: selected.protein,
-          carbs: selected.carbs,
-          fat: selected.fat,
+          protein: selected.protein_g,
+          carbs: selected.carbs_g,
+          fat: selected.fat_g,
           meal_type: mealType,
           emoji: getEmojiForMealType(mealType),
           ingredients: selected.ingredients.map(i => i.item),
@@ -258,7 +258,7 @@ function generatePlan(options: PlanGeneratorOptions): GeneratedDay[] {
     }
     
     const totalCalories = dayMeals.reduce((sum, m) => sum + m.calories, 0);
-    const totalProtein = dayMeals.reduce((sum, m) => sum + m.protein, 0);
+    const totalProtein = dayMeals.reduce((sum, m) => sum + m.protein, 0); // m.protein is correct here since dayMeals uses the renamed property
     
     return {
       date,
