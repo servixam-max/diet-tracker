@@ -252,9 +252,9 @@ function getDayName(dateStr: string): string {
 }
 
 // Utility functions for plan manipulation
-export function regeneratePlan(plan: GeneratedDay[], dayIndex: number, options: PlanGeneratorOptions): GeneratedDay[] {
+export async function regeneratePlan(plan: GeneratedDay[], dayIndex: number, options: PlanGeneratorOptions): Promise<GeneratedDay[]> {
   // Simple regeneration - just create a new plan
-  return generatePlan(options);
+  return await generatePlan(options);
 }
 
 export function swapMeals(plan: GeneratedDay[], dayIndex1: number, dayIndex2: number, mealType: string): GeneratedDay[] {
