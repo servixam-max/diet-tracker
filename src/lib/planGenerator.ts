@@ -183,12 +183,12 @@ function generatePlan(options: PlanGeneratorOptions): GeneratedDay[] {
   let recipes = filterRecipesByRestrictions(RECIPES, dietaryRestrictions);
   recipes = recipes.filter(r => !excludedRecipeIds.includes(r.id));
   
-  // Group by meal type
+  // Group by meal type (using tags instead of mealType for Supabase compatibility)
   const byMealType: Record<string, Recipe[]> = {
-    breakfast: recipes.filter(r => r.mealType.includes("desayuno")),
-    lunch: recipes.filter(r => r.mealType.includes("comida")),
-    snack: recipes.filter(r => r.mealType.includes("snack")),
-    dinner: recipes.filter(r => r.mealType.includes("cena")),
+    breakfast: recipes.filter(r => r.tags?.some(t => t.toLowerCase().includes("desayuno")) || false),
+    lunch: recipes.filter(r => r.tags?.some(t => t.toLowerCase().includes("comida")) || false),
+    snack: recipes.filter(r => r.tags?.some(t => t.toLowerCase().includes("snack")) || false),
+    dinner: recipes.filter(r => r.tags?.some(t => t.toLowerCase().includes("cena")) || false),
   };
   
   // Track state for variety constraints
