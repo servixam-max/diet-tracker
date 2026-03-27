@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus, Search, ChefHat } from "lucide-react";
 import { showToast } from "@/components/ui/Feedback";
@@ -49,9 +49,14 @@ export function MealAddModal({ isOpen, onClose, mealType, onAdd }: MealAddModalP
     }
   };
 
-  const handleOpen = () => {
-    fetchRecipes();
-  };
+  useEffect(() => {
+    if (isOpen) {
+      fetchRecipes();
+    } else {
+      setRecipes([]);
+      setSearchQuery("");
+    }
+  }, [isOpen]);
 
   const handleAdd = async (recipe: Recipe) => {
     try {
