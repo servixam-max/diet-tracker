@@ -1,11 +1,6 @@
-// Plan Generator v2 - Improved algorithm with variety and distribution controls
-// Features:
-// - No repeated supermarket twice in a day
-// - Max 2x same recipe per week
-// - Calorie distribution: 20% breakfast, 35% lunch, 15% snack, 30% dinner
-// - Protein distribution throughout the day
+// Plan Generator v2 - Fetch recipes from Supabase at runtime
+// Works in both server and client contexts
 
-// Recipe interface matching Supabase schema
 interface Recipe {
   id: string;
   name: string;
@@ -23,59 +18,6 @@ interface Recipe {
   tags: string[];
 }
 
-// Static fallback recipes (small set for demo)
-const RECIPES: Recipe[] = [];
-
-// Fetch recipes from Supabase at runtime
-export async function fetchRecipesFromSupabase(): Promise<Recipe[]> {
-  try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    
-    const response = await fetch(`${supabaseUrl}/rest/v1/recipes?select=*&limit=500`, {
-      headers: {
-        'apikey': supabaseKey,
-        'Authorization': `Bearer ${supabaseKey}`,
-      },
-    });
-    
-    if (!response.ok) {
-      console.error('Failed to fetch recipes:', response.status);
-      return RECIPES;
-    }
-    
-    const data = await response.json();
-    return data.map((r: any) => ({
-      id: r.id,
-      name: r.name,
-      description: r.description,
-      image_url: r.image_url,
-      prep_time_minutes: r.prep_time_minutes,
-      calories: r.calories,
-      protein_g: r.protein_g,
-      carbs_g: r.carbs_g,
-      fat_g: r.fat_g,
-      servings: r.servings,
-      supermarket: r.supermarket,
-      ingredients: r.ingredients,
-      instructions: r.instructions,
-      tags: r.tags,
-    }));
-  } catch (error) {
-    console.error('Error fetching recipes:', error);
-    return RECIPES;
-  }
-}
-
-const CALORIE_DISTRIBUTION = {
-  breakfast: 0.20,
-  lunch: 0.35,
-  snack: 0.15,
-  dinner: 0.30,
-};
-
-const DAY_NAMES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-
 interface GeneratedMeal {
   recipeId: string;
   name: string;
@@ -84,9 +26,9 @@ interface GeneratedMeal {
   carbs: number;
   fat: number;
   meal_type: string;
-  emoji?: string;
-  ingredients?: string[];
   supermarket: string;
+  emoji: string;
+  ingredients: string[];
 }
 
 interface GeneratedDay {
@@ -100,43 +42,51 @@ interface GeneratedDay {
 interface PlanGeneratorOptions {
   targetCalories: number;
   dietaryRestrictions?: string[];
-  weekStart?: string;
   excludedRecipeIds?: string[];
 }
 
-function getWeekDates(offset = 0): string[] {
-  const today = new Date();
-  const dayOfWeek = today.getDay();
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) + offset * 7);
-  
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    return d.toISOString().split("T")[0];
-  });
-}
+const CALORIE_DISTRIBUTION = {
+  breakfast: 0.20,
+  lunch: 0.35,
+  snack: 0.15,
+  dinner: 0.30,
+};
 
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+const mealTypeEmojis: Record<string, string> = {
+  breakfast: "🌅",
+  lunch: "☀️",
+  snack: "🍂",
+  dinner: "🌙",
+};
+
+// Fetch recipes from Supabase
+async function fetchRecipes(): Promise<Recipe[]> {
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    
+    const response = await fetch(`${supabaseUrl}/rest/v1/recipes?select=*&limit=500`, {
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+      },
+    });
+    
+    if (!response.ok) {
+      console.error('Failed to fetch recipes:', response.status);
+      return [];
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching recipes:', error);
+    return [];
   }
-  return a;
-}
-
-function getEmojiForMealType(mealType: string): string {
-  const emojis: Record<string, string> = {
-    breakfast: "🌅",
-    lunch: "☀️",
-    snack: "🍎",
-    dinner: "🌙",
-  };
-  return emojis[mealType] || "🍴";
 }
 
 function filterRecipesByRestrictions(recipes: Recipe[], restrictions: string[]): Recipe[] {
+  if (!restrictions || restrictions.length === 0) return recipes;
+  
   if (restrictions.includes("Vegetariano")) {
     return recipes.filter(r => 
       !r.ingredients.some(i => 
@@ -167,9 +117,13 @@ interface GenerationState {
   recipeCounts: Record<string, number>;
 }
 
-function generatePlan(options: PlanGeneratorOptions): GeneratedDay[] {
+export async function generatePlan(options: PlanGeneratorOptions): Promise<GeneratedDay[]> {
   const { targetCalories, dietaryRestrictions = [], excludedRecipeIds = [] } = options;
   const dates = getWeekDates(0);
+  
+  // Fetch recipes from Supabase
+  const allRecipes = await fetchRecipes();
+  console.log(`Fetched ${allRecipes.length} recipes from Supabase`);
   
   // Calculate target calories per meal type
   const targets = {
@@ -180,16 +134,25 @@ function generatePlan(options: PlanGeneratorOptions): GeneratedDay[] {
   };
   
   // Filter recipes
-  let recipes = filterRecipesByRestrictions(RECIPES, dietaryRestrictions);
+  let recipes = filterRecipesByRestrictions(allRecipes, dietaryRestrictions);
   recipes = recipes.filter(r => !excludedRecipeIds.includes(r.id));
   
-  // Group by meal type (using tags instead of mealType for Supabase compatibility)
+  console.log(`After filtering: ${recipes.length} recipes`);
+  
+  // Group by meal type (using tags)
   const byMealType: Record<string, Recipe[]> = {
     breakfast: recipes.filter(r => r.tags?.some(t => t.toLowerCase().includes("desayuno")) || false),
     lunch: recipes.filter(r => r.tags?.some(t => t.toLowerCase().includes("comida")) || false),
     snack: recipes.filter(r => r.tags?.some(t => t.toLowerCase().includes("snack")) || false),
     dinner: recipes.filter(r => r.tags?.some(t => t.toLowerCase().includes("cena")) || false),
   };
+  
+  console.log('Recipes by meal type:', {
+    breakfast: byMealType.breakfast.length,
+    lunch: byMealType.lunch.length,
+    snack: byMealType.snack.length,
+    dinner: byMealType.dinner.length,
+  });
   
   // Track state for variety constraints
   const state: GenerationState = {
@@ -218,30 +181,20 @@ function generatePlan(options: PlanGeneratorOptions): GeneratedDay[] {
         const count = state.recipeCounts[r.id] || 0;
         if (count >= 2) return false;
         
-        // Constraint 2: Don't repeat supermarket twice in a day
-        if (daySupermarkets.has(r.supermarket)) return false;
+        // Constraint 2: No repeated supermarket twice in a day
+        if (daySupermarkets.has(r.supermarket)) {
+          // Allow if no other option
+          const otherOptions = byMealType[mealType].filter(r2 => !daySupermarkets.has(r2.supermarket));
+          if (otherOptions.length > 0) return false;
+        }
         
         return true;
       });
       
-      // If no recipes available, relax supermarket constraint
-      if (availableRecipes.length === 0) {
-        availableRecipes = byMealType[mealType].filter(r => {
-          const count = state.recipeCounts[r.id] || 0;
-          return count < 2;
-        });
-      }
-      
-      // Shuffle and pick closest to target
-      const shuffled = shuffle(availableRecipes);
-      const selected = pickClosestToTarget(shuffled, targetCal);
+      // Pick recipe closest to target calories
+      const selected = pickClosestToTarget(availableRecipes, targetCal);
       
       if (selected) {
-        // Update state
-        state.usedRecipeIds.add(selected.id);
-        state.recipeCounts[selected.id] = (state.recipeCounts[selected.id] || 0) + 1;
-        daySupermarkets.add(selected.supermarket);
-        
         dayMeals.push({
           recipeId: selected.id,
           name: selected.name,
@@ -250,85 +203,75 @@ function generatePlan(options: PlanGeneratorOptions): GeneratedDay[] {
           carbs: selected.carbs_g,
           fat: selected.fat_g,
           meal_type: mealType,
-          emoji: getEmojiForMealType(mealType),
+          emoji: mealTypeEmojis[mealType],
           ingredients: selected.ingredients.map(i => i.item),
           supermarket: selected.supermarket,
         });
+        
+        // Update state
+        state.usedRecipeIds.add(selected.id);
+        state.recipeCounts[selected.id] = (state.recipeCounts[selected.id] || 0) + 1;
+        daySupermarkets.add(selected.supermarket);
       }
     }
     
-    const totalCalories = dayMeals.reduce((sum, m) => sum + m.calories, 0);
-    const totalProtein = dayMeals.reduce((sum, m) => sum + m.protein, 0); // m.protein is correct here since dayMeals uses the renamed property
-    
     return {
       date,
-      dayName: DAY_NAMES[dayIndex],
+      dayName: getDayName(date),
       meals: dayMeals,
-      totalCalories,
-      totalProtein,
+      totalCalories: dayMeals.reduce((sum, m) => sum + m.calories, 0),
+      totalProtein: dayMeals.reduce((sum, m) => sum + m.protein, 0),
     };
   });
 }
 
-// Regenerate a single day or entire week
-export function regeneratePlan(
-  existingPlan: GeneratedDay[],
-  dayIndex: number | null,
-  options: PlanGeneratorOptions
-): GeneratedDay[] {
-  const newPlan = [...existingPlan];
+// Helper functions
+function getWeekDates(offset: number = 0): string[] {
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
   
-  if (dayIndex === null) {
-    // Regenerate entire week
-    return generatePlan(options);
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + mondayOffset + (offset * 7));
+  monday.setHours(0, 0, 0, 0);
+  
+  const dates: string[] = [];
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + i);
+    dates.push(date.toISOString().split('T')[0]);
   }
   
-  // Regenerate single day
-  const dates = getWeekDates(0);
-  const dayPlan = generatePlan(options)[dayIndex];
-  newPlan[dayIndex] = dayPlan;
-  
-  return newPlan;
+  return dates;
 }
 
-// Swap meals between two days
-export function swapMeals(
-  plan: GeneratedDay[],
-  dayIndex1: number,
-  dayIndex2: number,
-  mealType: string
-): GeneratedDay[] {
-  const newPlan = [...plan];
-  const day1 = { ...newPlan[dayIndex1] };
-  const day2 = { ...newPlan[dayIndex2] };
+function getDayName(dateStr: string): string {
+  const date = new Date(dateStr);
+  const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  return days[date.getDay()];
+}
+
+// Utility functions for plan manipulation
+export function regeneratePlan(plan: GeneratedDay[], dayIndex: number, options: PlanGeneratorOptions): GeneratedDay[] {
+  // Simple regeneration - just create a new plan
+  return generatePlan(options);
+}
+
+export function swapMeals(plan: GeneratedDay[], dayIndex1: number, dayIndex2: number, mealType: string): GeneratedDay[] {
+  const newPlan = JSON.parse(JSON.stringify(plan));
+  const day1 = newPlan[dayIndex1];
+  const day2 = newPlan[dayIndex2];
   
   const meal1Index = day1.meals.findIndex(m => m.meal_type === mealType);
   const meal2Index = day2.meals.findIndex(m => m.meal_type === mealType);
   
-  if (meal1Index === -1 || meal2Index === -1) {
-    return plan;
+  if (meal1Index >= 0 && meal2Index >= 0) {
+    const temp = day1.meals[meal1Index];
+    day1.meals[meal1Index] = day2.meals[meal2Index];
+    day2.meals[meal2Index] = temp;
   }
-  
-  // Swap the meals
-  const temp = day1.meals[meal1Index];
-  day1.meals[meal1Index] = day2.meals[meal2Index];
-  day2.meals[meal2Index] = temp;
-  
-  // Update meal_type to match the day's slot
-  day1.meals[meal1Index] = { ...day1.meals[meal1Index], meal_type: mealType };
-  day2.meals[meal2Index] = { ...day2.meals[meal2Index], meal_type: mealType };
-  
-  // Recalculate totals
-  day1.totalCalories = day1.meals.reduce((sum, m) => sum + m.calories, 0);
-  day1.totalProtein = day1.meals.reduce((sum, m) => sum + m.protein, 0);
-  day2.totalCalories = day2.meals.reduce((sum, m) => sum + m.calories, 0);
-  day2.totalProtein = day2.meals.reduce((sum, m) => sum + m.protein, 0);
-  
-  newPlan[dayIndex1] = day1;
-  newPlan[dayIndex2] = day2;
   
   return newPlan;
 }
 
-// Export for API route
-export { generatePlan as default, getWeekDates };
+export { getWeekDates };

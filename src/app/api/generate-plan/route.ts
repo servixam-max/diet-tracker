@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import generatePlan, { regeneratePlan, swapMeals, getWeekDates } from "@/lib/planGenerator";
+import { generatePlan, regeneratePlan, swapMeals, getWeekDates } from "@/lib/planGenerator";
 
 interface GeneratedDay {
   date: string;
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     
     // If not authenticated, generate plan without saving
     if (!user) {
-      const plan = generatePlan({ targetCalories, dietaryRestrictions: [] });
+      const plan = await generatePlan({ targetCalories, dietaryRestrictions: [] });
       return NextResponse.json({ weekStart, plan, targetCalories, demo: true });
     }
     
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       });
     }
     
-    const plan = generatePlan({ targetCalories: userTargetCalories, dietaryRestrictions: restrictions });
+    const plan = await generatePlan({ targetCalories: userTargetCalories, dietaryRestrictions: restrictions });
     
     return NextResponse.json({ weekStart, plan, targetCalories: userTargetCalories });
   } catch (error) {
@@ -68,7 +68,7 @@ export async function POST() {
     
     // Demo mode - generate without saving
     if (!user) {
-      const plan = generatePlan({ targetCalories, dietaryRestrictions: [] });
+      const plan = await generatePlan({ targetCalories, dietaryRestrictions: [] });
       const weekStart = getWeekDates(0)[0];
       return NextResponse.json({ weekStart, plan, targetCalories, demo: true });
     }
@@ -78,7 +78,7 @@ export async function POST() {
     const userTargetCalories = profile?.daily_calories || targetCalories;
     const restrictions = profile?.dietary_restrictions || [];
     
-    const plan = generatePlan({ targetCalories: userTargetCalories, dietaryRestrictions: restrictions });
+    const plan = await generatePlan({ targetCalories: userTargetCalories, dietaryRestrictions: restrictions });
     const weekStart = getWeekDates(0)[0];
     
     await supabase.from("weekly_plans").upsert({ 
