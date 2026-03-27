@@ -15,6 +15,7 @@ import { useHaptic } from "@/hooks/useHaptic";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { MacrosSummary } from "@/components/dashboard/MacrosSummary";
 import { MealsSection } from "@/components/dashboard/MealsSection";
+import { MealAddModal } from "@/components/dashboard/MealAddModal";
 import { Flame, Activity, Target, ArrowDown, RefreshCw, Zap, ChevronRight } from "lucide-react";
 
 // Dynamic imports for heavy components
@@ -83,6 +84,8 @@ export default function DashboardPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedDate] = useState(new Date().toISOString().split('T')[0]);
   const { light, medium } = useHaptic();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedMealType, setSelectedMealType] = useState<"breakfast" | "lunch" | "snack" | "dinner">("breakfast");
   
   // Memoized totals calculation
   const totalCalories = useMemo(() => meals.reduce((acc, m) => acc + m.calories, 0), [meals]);
@@ -139,6 +142,32 @@ export default function DashboardPage() {
     showToast('Datos actualizados', 'success');
     medium();
   }, [fetchData, light, medium]);
+
+  const handleAddMeal = useCallback(async (mealType: "breakfast" | "lunch" | "snack" | "dinner") => {
+    setSelectedMealType(mealType);
+    setIsModalOpen(true);
+  }, []);
+
+  const handleRecipeSelect = useCallback(async (recipe: any) => {
+    const response = await fetch('/api/food-log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        meal_type: selectedMealType,
+        description: recipe.name,
+        calories: recipe.calories,
+        protein_g: recipe.protein_g,
+        carbs_g: recipe.carbs_g,
+        fat_g: recipe.fat_g,
+        image_url: recipe.image_url,
+        source: 'recipe',
+      }),
+    });
+
+    if (!response.ok) throw new Error('Failed to add meal');
+    
+    await fetchData();
+  }, [selectedMealType, fetchData]);
 
 
 
@@ -254,8 +283,20 @@ export default function DashboardPage() {
 
         {/* Meals Section */}
         <motion.div variants={itemVariants}>
-          <MealsSection meals={meals} isLoading={isLoading} />
+          <MealsSection 
+            meals={meals} 
+            isLoading={isLoading}
+            onAddMeal={handleAddMeal}
+          />
         </motion.div>
+
+        {/* Add Meal Modal */}
+        <MealAddModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          mealType={selectedMealType}
+          onAdd={handleRecipeSelect}
+        />
 
         {/* Streak Counter */}
         <motion.div variants={itemVariants} className="mt-6">

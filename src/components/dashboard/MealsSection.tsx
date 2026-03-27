@@ -23,9 +23,10 @@ interface Meal {
 interface MealsSectionProps {
   meals: Meal[];
   isLoading: boolean;
+  onAddMeal?: (type: "breakfast" | "lunch" | "snack" | "dinner") => void;
 }
 
-export const MealsSection = memo(function MealsSection({ meals, isLoading }: MealsSectionProps) {
+export const MealsSection = memo(function MealsSection({ meals, isLoading, onAddMeal }: MealsSectionProps) {
   const MEAL_TYPES = ['Desayuno', 'Almuerzo', 'Merienda', 'Cena'] as const;
 
   return (
@@ -60,17 +61,22 @@ export const MealsSection = memo(function MealsSection({ meals, isLoading }: Mea
             {MEAL_TYPES.map((mealType) => {
               const meal = meals.find(m => m.type === mealType);
               return (
-                <MealCard
+                <div
                   key={mealType}
-                  type={mealType}
-                  name={meal?.name || `Sin ${mealType.toLowerCase()}`}
-                  calories={meal?.calories || 0}
-                  protein={meal?.protein}
-                  carbs={meal?.carbs}
-                  fat={meal?.fat}
-                  time={meal?.time}
-                  isEmpty={!meal}
-                />
+                  onClick={() => !meal && onAddMeal?.(mealType.toLowerCase() as any)}
+                  className={!meal ? 'cursor-pointer' : ''}
+                >
+                  <MealCard
+                    type={mealType}
+                    name={meal?.name || `Sin ${mealType.toLowerCase()}`}
+                    calories={meal?.calories || 0}
+                    protein={meal?.protein}
+                    carbs={meal?.carbs}
+                    fat={meal?.fat}
+                    time={meal?.time}
+                    isEmpty={!meal}
+                  />
+                </div>
               );
             })}
           </>
