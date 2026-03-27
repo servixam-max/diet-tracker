@@ -259,11 +259,11 @@ export async function regeneratePlan(plan: GeneratedDay[], dayIndex: number, opt
 
 export function swapMeals(plan: GeneratedDay[], dayIndex1: number, dayIndex2: number, mealType: string): GeneratedDay[] {
   const newPlan = JSON.parse(JSON.stringify(plan));
-  const day1 = newPlan[dayIndex1];
-  const day2 = newPlan[dayIndex2];
+  const day1: GeneratedDay = newPlan[dayIndex1];
+  const day2: GeneratedDay = newPlan[dayIndex2];
   
-  const meal1Index = day1.meals.findIndex(m => m.meal_type === mealType);
-  const meal2Index = day2.meals.findIndex(m => m.meal_type === mealType);
+  const meal1Index = day1.meals.findIndex((m: GeneratedMeal) => m.meal_type === mealType);
+  const meal2Index = day2.meals.findIndex((m: GeneratedMeal) => m.meal_type === mealType);
   
   if (meal1Index >= 0 && meal2Index >= 0) {
     const temp = day1.meals[meal1Index];
