@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, ChefHat, Clock, Users, Check, Plus, Trash2, ChevronLeft, ChevronRight, Flame } from "lucide-react";
 import { useHaptic } from "@/hooks/useHaptic";
@@ -52,13 +52,11 @@ interface WeeklyMealPlannerProps {
   userId: string;
 }
 
-// Memoized MealSlot component
-const MealSlot = useMemo(() => function MealSlot({ type, meal, onSelect, onRemove, onLight }: {
+function MealSlot({ type, meal, onSelect, onRemove }: {
   type: string;
   meal: MealOption | null;
   onSelect: () => void;
   onRemove: () => void;
-  onLight: () => void;
 }) {
   return (
     <div className="flex items-center gap-2">
@@ -87,35 +85,40 @@ const MealSlot = useMemo(() => function MealSlot({ type, meal, onSelect, onRemov
       )}
     </div>
   );
-}, []);
+}
+
+function createWeekDays(currentWeekOffset: number): DayPlan[] {
+  const today = new Date();
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay() + 1 + currentWeekOffset * 7);
+
+  const days: DayPlan[] = [];
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(startOfWeek);
+    date.setDate(startOfWeek.getDate() + i);
+    days.push({
+      day: ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"][i],
+      date,
+      breakfast: i === 0 ? mealOptions.breakfast[0] : null,
+      lunch: i === 0 ? mealOptions.lunch[0] : null,
+      dinner: null,
+      snacks: [],
+    });
+  }
+
+  return days;
+}
 
 export function WeeklyMealPlanner({ userId }: WeeklyMealPlannerProps) {
   const [currentWeekOffset, setCurrentWeekOffset] = useState(0);
+  const [weekDays, setWeekDays] = useState<DayPlan[]>(() => createWeekDays(0));
   const [selectedMealType, setSelectedMealType] = useState<string | null>(null);
   const [showMealSelector, setShowMealSelector] = useState(false);
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const { light, success } = useHaptic();
 
-  // Generate week days - memoized
-  const weekDays = useMemo(() => {
-    const today = new Date();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay() + 1 + (currentWeekOffset * 7));
-    
-    const days: DayPlan[] = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(startOfWeek);
-      date.setDate(startOfWeek.getDate() + i);
-      days.push({
-        day: ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"][i],
-        date,
-        breakfast: i === 0 ? mealOptions.breakfast[0] : null,
-        lunch: i === 0 ? mealOptions.lunch[0] : null,
-        dinner: null,
-        snacks: [],
-      });
-    }
-    return days;
+  useEffect(() => {
+    setWeekDays(createWeekDays(currentWeekOffset));
   }, [currentWeekOffset]);
 
   const openMealSelector = useCallback((dayIndex: number, mealType: string) => {
@@ -127,21 +130,31 @@ export function WeeklyMealPlanner({ userId }: WeeklyMealPlannerProps) {
 
   const selectMeal = useCallback((meal: MealOption) => {
     success();
-    const day = weekDays[selectedDayIndex];
-    if (selectedMealType === "breakfast") day.breakfast = meal;
-    else if (selectedMealType === "lunch") day.lunch = meal;
-    else if (selectedMealType === "dinner") day.dinner = meal;
+    setWeekDays((prev) =>
+      prev.map((day, index) => {
+        if (index !== selectedDayIndex) return day;
+        if (selectedMealType === "breakfast") return { ...day, breakfast: meal };
+        if (selectedMealType === "lunch") return { ...day, lunch: meal };
+        if (selectedMealType === "dinner") return { ...day, dinner: meal };
+        return day;
+      })
+    );
     setShowMealSelector(false);
     setSelectedMealType(null);
-  }, [weekDays, selectedDayIndex, selectedMealType, success]);
+  }, [selectedDayIndex, selectedMealType, success]);
 
   const removeMeal = useCallback((dayIndex: number, mealType: string) => {
     light();
-    const day = weekDays[dayIndex];
-    if (mealType === "breakfast") day.breakfast = null;
-    else if (mealType === "lunch") day.lunch = null;
-    else if (mealType === "dinner") day.dinner = null;
-  }, [weekDays, light]);
+    setWeekDays((prev) =>
+      prev.map((day, index) => {
+        if (index !== dayIndex) return day;
+        if (mealType === "breakfast") return { ...day, breakfast: null };
+        if (mealType === "lunch") return { ...day, lunch: null };
+        if (mealType === "dinner") return { ...day, dinner: null };
+        return day;
+      })
+    );
+  }, [light]);
 
   const getTotalCalories = useCallback((day: DayPlan) => {
     let total = 0;
@@ -234,9 +247,9 @@ export function WeeklyMealPlanner({ userId }: WeeklyMealPlannerProps) {
 
               {/* Meals */}
               <div className="space-y-2">
-                <MealSlot type="Desayuno" meal={day.breakfast} onSelect={() => openMealSelector(dayIndex, "breakfast")} onRemove={() => removeMeal(dayIndex, "breakfast")} onLight={light} />
-                <MealSlot type="Almuerzo" meal={day.lunch} onSelect={() => openMealSelector(dayIndex, "lunch")} onRemove={() => removeMeal(dayIndex, "lunch")} onLight={light} />
-                <MealSlot type="Cena" meal={day.dinner} onSelect={() => openMealSelector(dayIndex, "dinner")} onRemove={() => removeMeal(dayIndex, "dinner")} onLight={light} />
+                <MealSlot type="Desayuno" meal={day.breakfast} onSelect={() => openMealSelector(dayIndex, "breakfast")} onRemove={() => removeMeal(dayIndex, "breakfast")} />
+                <MealSlot type="Almuerzo" meal={day.lunch} onSelect={() => openMealSelector(dayIndex, "lunch")} onRemove={() => removeMeal(dayIndex, "lunch")} />
+                <MealSlot type="Cena" meal={day.dinner} onSelect={() => openMealSelector(dayIndex, "dinner")} onRemove={() => removeMeal(dayIndex, "dinner")} />
               </div>
             </motion.div>
           );

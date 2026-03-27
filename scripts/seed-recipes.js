@@ -5,6 +5,7 @@
  * eslint-disable-next-line @typescript-eslint/no-require-imports
  */
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const fetch = require('node-fetch');
 
 // Configuración

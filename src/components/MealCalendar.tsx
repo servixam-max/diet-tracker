@@ -29,6 +29,11 @@ export function MealCalendar({ userId, onSelectDay }: MealCalendarProps) {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const { light } = useHaptic();
 
+  const pseudoRandom = (seed: number) => {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+  };
+
   // Generate sample data for demo
   const generateMonthData = () => {
     const year = currentMonth.getFullYear();
@@ -40,15 +45,16 @@ export function MealCalendar({ userId, onSelectDay }: MealCalendarProps) {
       const date = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
       const meals: MealEntry[] = [];
       
-      // Random meals for some days
-      if (Math.random() > 0.2) {
-        const baseCal = 1500 + Math.floor(Math.random() * 800);
+      // Deterministic meals for demo days
+      const daySeed = year * 10000 + (month + 1) * 100 + day;
+      if (pseudoRandom(daySeed) > 0.2) {
+        const baseCal = 1500 + Math.floor(pseudoRandom(daySeed + 1) * 800);
         meals.push(
           { id: "1", meal: "breakfast", name: "Desayuno", calories: Math.floor(baseCal * 0.25), time: "08:30" },
           { id: "2", meal: "lunch", name: "Almuerzo", calories: Math.floor(baseCal * 0.35), time: "14:00" },
           { id: "3", meal: "dinner", name: "Cena", calories: Math.floor(baseCal * 0.3), time: "21:00" }
         );
-        if (Math.random() > 0.5) {
+        if (pseudoRandom(daySeed + 2) > 0.5) {
           meals.push({ id: "4", meal: "snack", name: "Merienda", calories: Math.floor(baseCal * 0.1), time: "17:30" });
         }
       }

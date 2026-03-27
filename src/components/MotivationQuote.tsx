@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Quote, RefreshCw, Heart, Share2 } from "lucide-react";
 import { useHaptic } from "@/hooks/useHaptic";
@@ -55,7 +55,7 @@ export function MotivationQuote({ userId }: MotivationQuoteProps) {
 
   function shareQuote() {
     light();
-    const text = `"${quote.text}" - ${quote.author}\n\n#DietTracker #Motivation`;
+    const text = `${quote.text} - ${quote.author}\n\n#DietTracker #Motivation`;
     navigator.clipboard.writeText(text);
     success();
   }
@@ -84,7 +84,7 @@ export function MotivationQuote({ userId }: MotivationQuoteProps) {
         animate={{ opacity: 1, y: 0 }}
         key={quote.text}
       >
-        <div className="absolute top-4 left-4 text-4xl text-pink-500/20">"</div>
+        <div className="absolute top-4 left-4 text-4xl text-pink-500/20">&quot;</div>
         
         <blockquote className="relative">
           <p className="text-lg font-medium leading-relaxed mb-3">

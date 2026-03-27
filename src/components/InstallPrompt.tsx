@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Download, Share, Plus, Compass } from 'lucide-react';
+import { X, Download, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface InstallPromptProps {
@@ -84,7 +84,7 @@ export default function InstallPrompt({ onDismiss }: InstallPromptProps) {
               </h3>
               <p className="text-sm text-gray-400 mb-3">
                 {isIOS 
-                  ? 'Para instalar esta app en tu iPhone, usa el botón Compartir y selecciona "Añadir a pantalla de inicio"'
+                  ? 'Para instalar esta app en tu iPhone, usa el botón Compartir y selecciona &quot;Añadir a pantalla de inicio&quot;'
                   : 'Instala la app para acceso rápido y notificaciones push'}
               </p>
               
@@ -98,7 +98,7 @@ export default function InstallPrompt({ onDismiss }: InstallPromptProps) {
                     </li>
                     <li className="flex items-center gap-2">
                       <Plus size={16} className="text-emerald-500" />
-                      <span>Selecciona "Añadir a pantalla de inicio"</span>
+                      <span>Selecciona &quot;Añadir a pantalla de inicio&quot;</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <div className="w-4 h-4 bg-emerald-500 rounded-full" />

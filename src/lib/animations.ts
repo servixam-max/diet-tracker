@@ -1,6 +1,8 @@
 // Sistema de animaciones consistente
 // Duraciones y easing functions estandarizadas
 
+import { type Transition } from "framer-motion";
+
 export const durations = {
   fast: 0.2,    // Para micro-interacciones (hover, tap)
   normal: 0.4,  // Para transiciones estándar
@@ -9,16 +11,16 @@ export const durations = {
 };
 
 export const easing = {
-  easeOut: [0.0, 0.0, 0.2, 1],
-  easeIn: [0.4, 0.0, 1, 1],
-  easeInOut: [0.4, 0.0, 0.2, 1],
+  easeOut: [0.0, 0.0, 0.2, 1] as const,
+  easeIn: [0.4, 0.0, 1, 1] as const,
+  easeInOut: [0.4, 0.0, 0.2, 1] as const,
   spring: {
-    type: "spring",
+    type: "spring" as const,
     stiffness: 300,
     damping: 20,
   },
   bounce: {
-    type: "spring",
+    type: "spring" as const,
     stiffness: 500,
     damping: 15,
   },

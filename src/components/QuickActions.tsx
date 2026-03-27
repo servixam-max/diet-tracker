@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Camera, Barcode, Clock, ChefHat, Droplets, Dumbbell, Moon, Apple, Utensils } from "lucide-react";
 import { useHaptic } from "@/hooks/useHaptic";
 
 interface QuickAction {
@@ -79,7 +78,7 @@ export function QuickActions({ onAddFood, onScanBarcode, onTakePhoto, onLogWater
           transition={{ delay: 0.2 }}
         >
           <p className="text-sm text-center text-zinc-400">
-            💡 Toca "Ver más" para acceder a todas las acciones
+            💡 Toca &quot;Ver más&quot; para acceder a todas las acciones
           </p>
         </motion.div>
       )}

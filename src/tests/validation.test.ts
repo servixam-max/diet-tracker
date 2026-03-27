@@ -87,14 +87,14 @@ describe('validateField', () => {
   describe('custom validation', () => {
     it('should pass when custom validation returns null', () => {
       const result = validateField('valid', { 
-        custom: (value: string) => value === 'valid' ? null : 'Invalid value' 
+        custom: (value: unknown) => value === 'valid' ? null : 'Invalid value' 
       });
       expect(result.isValid).toBe(true);
     });
 
     it('should fail when custom validation returns error', () => {
       const result = validateField('invalid', { 
-        custom: (value: string) => value === 'valid' ? null : 'Invalid value' 
+        custom: (value: unknown) => value === 'valid' ? null : 'Invalid value' 
       });
       expect(result.isValid).toBe(false);
       expect(result.error).toBe('Invalid value');

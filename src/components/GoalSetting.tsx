@@ -52,7 +52,7 @@ export function GoalSetting({ userId, onGoalsChange }: GoalSettingProps) {
   function addGoal(type: Goal["type"]) {
     const config = GOAL_TYPES[type];
     const newGoal: Goal = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       type,
       name: config.label,
       target: type === "weight" ? 70 : type === "calories" ? 2000 : type === "protein" ? 100 : type === "exercise" ? 150 : type === "water" ? 2500 : 8,

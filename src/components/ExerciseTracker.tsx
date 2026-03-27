@@ -61,7 +61,7 @@ export function ExerciseTracker({ userId }: ExerciseTrackerProps) {
 
   function addExercise(exercise: Exercise) {
     light();
-    const updated = [...todayExercises, { ...exercise, id: Date.now().toString() }];
+    const updated = [...todayExercises, { ...exercise, id: crypto.randomUUID() }];
     setTodayExercises(updated);
     localStorage.setItem(`exercise-${userId}`, JSON.stringify({ today: updated, weekly: weeklyData }));
     setShowAdd(false);

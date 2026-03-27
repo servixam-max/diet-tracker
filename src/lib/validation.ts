@@ -1,6 +1,8 @@
 // Validación de formularios reutilizable
 // Basado en mejores prácticas de UX y accesibilidad
 
+import { useState, useCallback } from "react";
+
 interface ValidationRule {
   required?: boolean;
   min?: number;
@@ -100,20 +102,75 @@ export function useFormValidation(
   initialValues: FormValues,
   validationRules: Record<string, ValidationRule>
 ) {
-  const validateForm = (values: FormValues) => {
-    const errors: Record<string, string> = {};
+  const [values, setValues] = useState<FormValues>(initialValues);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const validateForm = (vals: FormValues) => {
+    const newErrors: Record<string, string> = {};
     let isValid = true;
 
     Object.keys(validationRules).forEach((field) => {
-      const result = validateField(values[field], validationRules[field]);
+      const result = validateField(vals[field], validationRules[field]);
       if (!result.isValid) {
-        errors[field] = result.error || '';
+        newErrors[field] = result.error || '';
         isValid = false;
       }
     });
 
-    return { isValid, errors };
+    setErrors(newErrors);
+    return { isValid, errors: newErrors };
   };
 
-  return { validateForm };
+  const handleChange = useCallback((field: string) => {
+    return (value: unknown) => {
+      setValues((prev: FormValues) => ({ ...prev, [field]: value }));
+      if (touched[field]) {
+        const result = validateField(value, validationRules[field]);
+        setErrors((prev: Record<string, string>) => ({ 
+          ...prev, 
+          [field]: result.isValid ? '' : (result.error || '')
+        }));
+      }
+    };
+  }, [touched, validationRules]);
+
+  const handleBlur = useCallback((field: string) => {
+    return () => {
+      setTouched((prev: Record<string, boolean>) => ({ ...prev, [field]: true }));
+      const result = validateField(values[field], validationRules[field]);
+      setErrors((prev: Record<string, string>) => ({ 
+        ...prev, 
+        [field]: result.isValid ? '' : (result.error || '')
+      }));
+    };
+  }, [values, validationRules]);
+
+  const reset = useCallback(() => {
+    setValues(initialValues);
+    setErrors({});
+    setTouched({});
+  }, [initialValues]);
+
+  const validateFieldOnly = useCallback((field: string) => {
+    const result = validateField(values[field], validationRules[field]);
+    setErrors((prev: Record<string, string>) => ({ 
+      ...prev, 
+      [field]: result.isValid ? '' : (result.error || '')
+    }));
+    return result.isValid;
+  }, [values, validationRules]);
+
+  return { 
+    values, 
+    errors, 
+    touched,
+    handleChange,
+    handleBlur,
+    validateForm,
+    validateFieldOnly,
+    reset,
+    setValues,
+    setErrors,
+  };
 }

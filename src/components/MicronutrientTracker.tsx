@@ -35,9 +35,18 @@ export function MicronutrientTracker({ userId }: MicronutrientTrackerProps) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const { light } = useHaptic();
 
+  const stableRatio = (id: string) => {
+    let hash = 0;
+    const key = `${userId ?? "anon"}-${id}`;
+    for (let i = 0; i < key.length; i++) {
+      hash = (hash * 31 + key.charCodeAt(i)) % 10000;
+    }
+    return 0.3 + (hash / 10000) * 0.8;
+  };
+
   // Simulated current values (in real app, calculate from food log)
   const nutrients: Micronutrient[] = MICRONUTRIENTS.map((m) => {
-    const current = m.target * (0.3 + Math.random() * 0.8);
+    const current = m.target * stableRatio(m.id);
     const pct = (current / m.target) * 100;
     let status: Micronutrient["status"] = "low";
     if (pct >= 100) status = "good";
