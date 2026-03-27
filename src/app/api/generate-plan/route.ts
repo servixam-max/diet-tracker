@@ -118,11 +118,11 @@ export async function PATCH(request: NextRequest) {
     let newPlan: GeneratedDay[];
     
     if (action === "regenerate-day" && typeof dayIndex === "number") {
-      // Regenerate single day
-      newPlan = regeneratePlan(existing.planData, dayIndex, { targetCalories, dietaryRestrictions: restrictions });
+      // Regenerate single day - generate new full plan
+      newPlan = await generatePlan({ targetCalories, dietaryRestrictions: restrictions });
     } else if (action === "regenerate-week") {
       // Regenerate entire week
-      newPlan = generatePlan({ targetCalories, dietaryRestrictions: restrictions });
+      newPlan = await generatePlan({ targetCalories, dietaryRestrictions: restrictions });
     } else {
       return NextResponse.json({ error: "Acción no válida" }, { status: 400 });
     }
