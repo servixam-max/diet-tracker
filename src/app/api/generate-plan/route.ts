@@ -23,13 +23,21 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     
+    // Demo mode - generate plan without auth
     const offset = parseInt(request.nextUrl.searchParams.get("offset") || "0");
     const weekStart = getWeekDates(offset)[0];
+    const targetCalories = 2000; // Default target
     
+    // If not authenticated, generate plan without saving
+    if (!user) {
+      const plan = generatePlan({ targetCalories, dietaryRestrictions: [] });
+      return NextResponse.json({ weekStart, plan, targetCalories, demo: true });
+    }
+    
+    // Authenticated - try to get from DB
     const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-    const targetCalories = profile?.daily_calories || 2000;
+    const userTargetCalories = profile?.daily_calories || targetCalories;
     const restrictions = profile?.dietary_restrictions || [];
     
     const { data: existing } = await supabase.from("weekly_plans").select("*").eq("user_id", user.id).eq("week_start", weekStart).single();
@@ -42,9 +50,9 @@ export async function GET(request: NextRequest) {
       });
     }
     
-    const plan = generatePlan({ targetCalories, dietaryRestrictions: restrictions });
+    const plan = generatePlan({ targetCalories: userTargetCalories, dietaryRestrictions: restrictions });
     
-    return NextResponse.json({ weekStart, plan, targetCalories });
+    return NextResponse.json({ weekStart, plan, targetCalories: userTargetCalories });
   } catch (error) {
     console.error("Generate plan GET error:", error);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
@@ -55,23 +63,32 @@ export async function POST() {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     
+    const targetCalories = 2000; // Default
+    
+    // Demo mode - generate without saving
+    if (!user) {
+      const plan = generatePlan({ targetCalories, dietaryRestrictions: [] });
+      const weekStart = getWeekDates(0)[0];
+      return NextResponse.json({ weekStart, plan, targetCalories, demo: true });
+    }
+    
+    // Authenticated - save to DB
     const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-    const targetCalories = profile?.daily_calories || 2000;
+    const userTargetCalories = profile?.daily_calories || targetCalories;
     const restrictions = profile?.dietary_restrictions || [];
     
-    const plan = generatePlan({ targetCalories, dietaryRestrictions: restrictions });
+    const plan = generatePlan({ targetCalories: userTargetCalories, dietaryRestrictions: restrictions });
     const weekStart = getWeekDates(0)[0];
     
     await supabase.from("weekly_plans").upsert({ 
       user_id: user.id, 
       week_start: weekStart, 
       planData: plan, 
-      total_calories: targetCalories 
+      total_calories: userTargetCalories 
     }, { onConflict: "user_id,week_start" });
     
-    return NextResponse.json({ weekStart, plan, targetCalories });
+    return NextResponse.json({ weekStart, plan, targetCalories: userTargetCalories });
   } catch (error) {
     console.error("Generate plan POST error:", error);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
