@@ -316,16 +316,6 @@ export function BottomNavBar() {
         }}
       />
       
-      {/* Notification bell button */}
-      <motion.button
-        onClick={() => router.push("/dashboard")}
-        className="absolute right-4 top-2 p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20"
-        whileTap={{ scale: 0.9 }}
-        aria-label="Notificaciones"
-      >
-        <Bell size={18} className="text-white" />
-      </motion.button>
-      
       {/* Navigation content */}
       <div className="relative flex items-center justify-around h-16 px-2">
         {navItems.map((item, index) => (

@@ -29,8 +29,8 @@ export function MealAddModal({ isOpen, onClose, mealType, onAdd }: MealAddModalP
 
   const mealTypeLabels = {
     breakfast: "desayuno",
-    lunch: "comida",
-    snack: "snack",
+    lunch: "almuerzo",
+    snack: "merienda",
     dinner: "cena"
   };
 
@@ -84,7 +84,7 @@ export function MealAddModal({ isOpen, onClose, mealType, onAdd }: MealAddModalP
         >
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
           <motion.div
-            className="absolute inset-x-0 bottom-0 max-h-[90vh] overflow-y-auto bg-[#0a0a0f] rounded-t-3xl"
+            className="absolute inset-x-0 bottom-0 h-[95vh] flex flex-col bg-[#0a0a0f] rounded-t-3xl"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
@@ -92,12 +92,12 @@ export function MealAddModal({ isOpen, onClose, mealType, onAdd }: MealAddModalP
             onClick={(e) => e.stopPropagation()}
           >
             {/* Handle */}
-            <div className="sticky top-0 z-10 flex justify-center pt-3 pb-2 bg-[#0a0a0f]">
+            <div className="flex-shrink-0 flex justify-center pt-3 pb-2 bg-[#0a0a0f]">
               <div className="w-12 h-1 bg-white/20 rounded-full" />
             </div>
 
             {/* Header */}
-            <div className="px-5 pb-4 border-b border-white/10">
+            <div className="flex-shrink-0 px-5 pb-4 border-b border-white/10">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-bold">
@@ -112,7 +112,7 @@ export function MealAddModal({ isOpen, onClose, mealType, onAdd }: MealAddModalP
             </div>
 
             {/* Search */}
-            <div className="px-5 py-4">
+            <div className="flex-shrink-0 px-5 py-4">
               <div className="relative">
                 <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
                 <input
@@ -125,8 +125,8 @@ export function MealAddModal({ isOpen, onClose, mealType, onAdd }: MealAddModalP
               </div>
             </div>
 
-            {/* Recipe list */}
-            <div className="px-5 pb-8">
+            {/* Recipe list - scrollable */}
+            <div className="flex-1 overflow-y-auto px-5 pb-8">
               {isLoading ? (
                 <div className="text-center py-12">
                   <ChefHat size={48} className="mx-auto text-zinc-600 mb-4 animate-pulse" />
