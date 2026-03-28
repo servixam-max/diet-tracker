@@ -13,13 +13,15 @@ import {
 import Link from "next/link";
 
 interface Meal {
+  recipeId: string;
   name: string;
   calories: number;
   protein: number;
   carbs: number;
   fat: number;
-  type: string;
-  emoji: string;
+  meal_type: string;
+  supermarket: string;
+  emoji?: string;
   ingredients?: string[];
 }
 
@@ -256,7 +258,7 @@ export default function WeeklyPlanPage() {
             {/* Meals */}
             <div className="space-y-3">
               {MEAL_TYPES.map((mealType, index) => {
-                const meal = currentDayPlan.meals.find(m => m.type === mealType.id);
+                const meal = currentDayPlan.meals.find(m => m.meal_type === mealType.id);
                 
                 return (
                   <motion.div
@@ -303,9 +305,29 @@ export default function WeeklyPlanPage() {
                                   className="flex-1 py-2 rounded-xl bg-green-500/20 border border-green-500/30 text-green-400 text-sm font-medium flex items-center justify-center gap-1"
                                   whileHover={{ scale: 1.02 }}
                                   whileTap={{ scale: 0.98 }}
-                                  onClick={() => {
+                                  onClick={async () => {
                                     triggerHaptic("medium");
-                                    showToast(`${meal.name} registrado`, "success");
+                                    // Add meal to food log
+                                    try {
+                                      const res = await fetch('/api/food-log', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                          meal_type: meal.meal_type,
+                                          description: meal.name,
+                                          calories: meal.calories,
+                                          protein_g: meal.protein,
+                                          carbs_g: meal.carbs,
+                                          fat_g: meal.fat,
+                                          source: 'weekly-plan',
+                                        }),
+                                      });
+                                      if (res.ok) {
+                                        showToast(`${meal.name} registrado`, "success");
+                                      }
+                                    } catch (e) {
+                                      showToast("Error al registrar", "error");
+                                    }
                                   }}
                                 >
                                   <Plus className="w-4 h-4" />
