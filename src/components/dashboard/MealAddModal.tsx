@@ -37,10 +37,22 @@ export function MealAddModal({ isOpen, onClose, mealType, onAdd }: MealAddModalP
   const fetchRecipes = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/recipes?limit=50&tag=${mealTypeLabels[mealType]}`);
+      // Try specific meal type tag first
+      const tag = mealTypeLabels[mealType];
+      const res = await fetch(`/api/recipes?limit=50&tag=${tag}`);
       if (res.ok) {
         const data = await res.json();
-        setRecipes(data);
+        // If no recipes with that tag, fetch all recipes
+        if (data && data.length > 0) {
+          setRecipes(data);
+        } else {
+          // Fallback: fetch all recipes without tag filter
+          const allRes = await fetch(`/api/recipes?limit=50`);
+          if (allRes.ok) {
+            const allData = await allRes.json();
+            setRecipes(allData);
+          }
+        }
       }
     } catch (error) {
       console.error("Error fetching recipes:", error);

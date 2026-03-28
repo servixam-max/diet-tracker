@@ -140,11 +140,19 @@ export async function generatePlan(options: PlanGeneratorOptions): Promise<Gener
   console.log(`After filtering: ${recipes.length} recipes`);
   
   // Group by meal type (using tags)
+  // Note: DB only has tags: desayuno, snack, vegetariano, saludable, rápido, etc.
+  // No "comida", "almuerzo", "merienda", "cena" tags exist
   const byMealType: Record<string, Recipe[]> = {
     breakfast: recipes.filter(r => r.tags?.some(t => t.toLowerCase().includes("desayuno")) || false),
-    lunch: recipes.filter(r => r.tags?.some(t => t.toLowerCase().includes("comida")) || false),
+    lunch: recipes.filter(r => 
+      !r.tags?.some(t => t.toLowerCase().includes("desayuno")) && 
+      !r.tags?.some(t => t.toLowerCase().includes("snack"))
+    ), // Lunch = not breakfast, not snack
     snack: recipes.filter(r => r.tags?.some(t => t.toLowerCase().includes("snack")) || false),
-    dinner: recipes.filter(r => r.tags?.some(t => t.toLowerCase().includes("cena")) || false),
+    dinner: recipes.filter(r => 
+      !r.tags?.some(t => t.toLowerCase().includes("desayuno")) && 
+      !r.tags?.some(t => t.toLowerCase().includes("snack"))
+    ), // Dinner = same as lunch pool
   };
   
   console.log('Recipes by meal type:', {
