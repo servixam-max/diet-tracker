@@ -43,6 +43,12 @@ export const MealsSection = memo(function MealsSection({ meals, isLoading, onAdd
         <motion.button
           className="flex items-center gap-1 text-sm text-green-400 hover:text-green-300 transition-colors"
           whileHover={{ x: 3 }}
+          onClick={() => {
+            // Navigate to food diary or expand view
+            if (typeof window !== 'undefined') {
+              window.location.href = '/dashboard?view=all';
+            }
+          }}
         >
           Ver todas
           <ChevronRight size={16} />

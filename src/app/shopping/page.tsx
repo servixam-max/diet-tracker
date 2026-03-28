@@ -132,8 +132,8 @@ export default function ShoppingPage() {
           <GenerateShoppingList onGenerated={handleGenerated} />
         </div>
 
-        {/* Items list */}
-        <div className="flex-1 overflow-y-auto no-scrollbar px-5 pb-4">
+        {/* Items list - scroll enabled */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-5 pb-4" style={{ WebkitOverflowScrolling: 'touch' }}>
           {items.length === 0 ? (
             <motion.div
               className="py-12 text-center"
