@@ -17,14 +17,53 @@ interface StreakCounterProps {
 }
 
 export function StreakCounter({ userId }: StreakCounterProps) {
-  const [streak, setStreak] = useState<StreakData>({
-    currentStreak: 7,
-    longestStreak: 21,
-    lastLogDate: new Date().toISOString().split("T")[0],
-    weeklyLogs: [true, true, true, true, true, false, false],
-  });
+  const [streak, setStreak] = useState<StreakData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [showBonus, setShowBonus] = useState(false);
   const { light, success } = useHaptic();
+
+  useEffect(() => {
+    async function fetchStreak() {
+      try {
+        // In real app: fetch from Supabase user_streaks table
+        // For demo: return zeros
+        const response = await fetch('/api/streak');
+        if (response.ok) {
+          const data = await response.json();
+          setStreak(data);
+        } else {
+          // Demo mode - show zeros
+          setStreak({
+            currentStreak: 0,
+            longestStreak: 0,
+            lastLogDate: null,
+            weeklyLogs: [false, false, false, false, false, false, false],
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching streak:', error);
+        // Demo mode - show zeros
+        setStreak({
+          currentStreak: 0,
+          longestStreak: 0,
+          lastLogDate: null,
+          weeklyLogs: [false, false, false, false, false, false, false],
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchStreak();
+  }, [userId]);
+
+  if (isLoading || !streak) {
+    return (
+      <div className="p-6 rounded-3xl bg-white/5 border border-white/10">
+        <div className="h-6 w-24 bg-white/10 rounded animate-pulse mb-4" />
+        <div className="h-12 w-32 bg-white/10 rounded animate-pulse" />
+      </div>
+    );
+  }
 
   const isStreakActive = streak.currentStreak > 0;
   const weeklyProgress = streak.weeklyLogs.filter(Boolean).length;
