@@ -4,12 +4,8 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
-import { User, LogOut, Target, Award, Shield, Settings } from "lucide-react";
-import { WeightChart } from "@/components/WeightChart";
-import { BodyMeasurements } from "@/components/BodyMeasurements";
-import { ProgressPhotos } from "@/components/ProgressPhotos";
-import { AchievementBadge } from "@/components/AchievementBadge";
-import { StreakCounter } from "@/components/StreakCounter";
+import { User, LogOut, Target, Award, Shield, Settings, ChevronRight } from "lucide-react";
+
 
 export default function ProfilePage() {
   const [isDemo, setIsDemo] = useState(false);
@@ -127,41 +123,65 @@ export default function ProfilePage() {
             </div>
           </motion.div>
 
-          <div className="space-y-6">
-            <WeightChart currentWeight={75} targetWeight={70} />
-            <StreakCounter userId="demo" />
-            <AchievementBadge userId="demo" />
-            <ProgressPhotos userId="demo" />
-            <BodyMeasurements userId="demo" />
-          </div>
+          {/* Essential profile info only */}
+          <motion.div 
+            className="grid grid-cols-2 gap-3 mb-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <div className="p-4 rounded-2xl glass-card">
+              <div className="flex items-center gap-2 mb-2">
+                <Target size={16} className="text-green-400" />
+                <span className="text-xs text-zinc-400">Calorías</span>
+              </div>
+              <p className="text-2xl font-bold gradient-text">2,000</p>
+            </div>
+            <div className="p-4 rounded-2xl glass-card">
+              <div className="flex items-center gap-2 mb-2">
+                <Award size={16} className="text-yellow-400" />
+                <span className="text-xs text-zinc-400">Nivel</span>
+              </div>
+              <p className="text-2xl font-bold text-yellow-400">Demo</p>
+            </div>
+          </motion.div>
 
+          {/* Settings */}
           <motion.div
-            className="p-6 rounded-2xl glass-card mb-6"
+            className="p-4 rounded-2xl glass-card mb-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-3">
               <Settings size={20} className="text-zinc-400" />
               <h3 className="font-semibold">Configuración</h3>
             </div>
-            <div className="space-y-3 text-sm text-zinc-400">
-              <p>• Preferencias de unidades</p>
-              <p>• Notificaciones</p>
-              <p>• Tema de color</p>
-              <p>• Exportar datos</p>
+            <div className="space-y-1 text-sm">
+              <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors">
+                <span className="text-zinc-400">Notificaciones</span>
+                <ChevronRight size={16} className="text-zinc-600" />
+              </button>
+              <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors">
+                <span className="text-zinc-400">Unidades</span>
+                <ChevronRight size={16} className="text-zinc-600" />
+              </button>
+              <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors">
+                <span className="text-zinc-400">Exportar datos</span>
+                <ChevronRight size={16} className="text-zinc-600" />
+              </button>
             </div>
           </motion.div>
 
           <motion.button 
             onClick={() => router.push("/login")}
-            className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl bg-green-500/20 border border-green-500/30 text-green-400 font-medium mb-3"
+            className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl bg-green-500/20 border border-green-500/30 text-green-400 font-medium"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
             <User size={20} />
-            <span>Crear cuenta o iniciar sesión</span>
+            <span>Iniciar sesión para guardar progreso</span>
           </motion.button>
         </div>
       </div>

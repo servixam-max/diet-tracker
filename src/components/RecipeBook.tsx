@@ -299,7 +299,10 @@ ${recipe.ingredients.map(i => `• ${i.item} (${i.amount})`).join("\n")}`;
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: Math.min(index * 0.03, 0.3) }}
-              onClick={() => router.push(`/recipes/${recipe.id}`)}
+              onClick={() => {
+                light();
+                setSelectedRecipe(recipe);
+              }}
               whileTap={{ scale: 0.98 }}
             >
               <div className="aspect-[4/3] relative">
