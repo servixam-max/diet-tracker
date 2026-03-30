@@ -8,7 +8,7 @@ import { useHaptic } from "@/hooks/useHaptic";
 interface StreakData {
   currentStreak: number;
   longestStreak: number;
-  lastLogDate: string;
+  lastLogDate: string | null;
   weeklyLogs: boolean[];
 }
 
