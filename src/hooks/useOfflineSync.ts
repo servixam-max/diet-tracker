@@ -4,59 +4,25 @@ import { useState, useEffect, useCallback } from "react";
 import { offlineDB, type OfflineFoodLog } from "@/lib/offline-db";
 
 interface UseOfflineSyncOptions {
-  userId: string;
   onSyncComplete?: () => void;
 }
 
-export function useOfflineSync({ userId, onSyncComplete }: UseOfflineSyncOptions) {
+export function useOfflineSync({ onSyncComplete }: UseOfflineSyncOptions) {
   const [isOnline, setIsOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
   const [hasPendingSync, setHasPendingSync] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
 
-  // Initialize DB
-  useEffect(() => {
-    offlineDB.init().catch(console.error);
-  }, []);
-
-  // Online/offline detection
-  useEffect(() => {
-    setIsOnline(navigator.onLine);
-
-    const handleOnline = () => {
-      setIsOnline(true);
-      // Trigger sync when coming back online
-      syncPendingData();
-    };
-
-    const handleOffline = () => {
-      setIsOnline(false);
-    };
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, []);
-
-  // Check for pending sync on mount
-  useEffect(() => {
-    checkPendingSync();
-  }, []);
-
-  async function checkPendingSync() {
+  const checkPendingSync = useCallback(async () => {
     try {
       const unsynced = await offlineDB.getUnsyncedLogs();
       setHasPendingSync(unsynced.length > 0);
     } catch (error) {
       console.error("Error checking pending sync:", error);
     }
-  }
+  }, []);
 
-  async function syncPendingData() {
+  const syncPendingData = useCallback(async () => {
     if (!isOnline || isSyncing) return;
 
     setIsSyncing(true);
@@ -126,7 +92,40 @@ export function useOfflineSync({ userId, onSyncComplete }: UseOfflineSyncOptions
     } finally {
       setIsSyncing(false);
     }
-  }
+  }, [isOnline, isSyncing, onSyncComplete]);
+
+  // Initialize DB
+  useEffect(() => {
+    offlineDB.init().catch(console.error);
+  }, []);
+
+  // Online/offline detection
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+
+    const handleOnline = () => {
+      setIsOnline(true);
+      // Trigger sync when coming back online
+      syncPendingData();
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [syncPendingData]);
+
+  // Check for pending sync on mount
+  useEffect(() => {
+    checkPendingSync();
+  }, [checkPendingSync]);
 
   async function addFoodLogOffline(log: Omit<OfflineFoodLog, "id">) {
     const localLog = {

@@ -1,9 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, Search, ChefHat } from "lucide-react";
+import { X, Search, ChefHat } from "lucide-react";
 import { showToast } from "@/components/ui/Feedback";
+
+const mealTypeLabels = {
+  breakfast: "desayuno",
+  lunch: "almuerzo",
+  snack: "merienda",
+  dinner: "cena"
+};
 
 interface Recipe {
   id: string;
@@ -23,18 +30,12 @@ interface MealAddModalProps {
 }
 
 export function MealAddModal({ isOpen, onClose, mealType, onAdd }: MealAddModalProps) {
+
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const mealTypeLabels = {
-    breakfast: "desayuno",
-    lunch: "almuerzo",
-    snack: "merienda",
-    dinner: "cena"
-  };
-
-  const fetchRecipes = async () => {
+  const fetchRecipes = useCallback(async () => {
     setIsLoading(true);
     try {
       // Try specific meal type tag first
@@ -59,7 +60,7 @@ export function MealAddModal({ isOpen, onClose, mealType, onAdd }: MealAddModalP
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [mealType]);
 
   useEffect(() => {
     if (isOpen) {
@@ -68,7 +69,7 @@ export function MealAddModal({ isOpen, onClose, mealType, onAdd }: MealAddModalP
       setRecipes([]);
       setSearchQuery("");
     }
-  }, [isOpen]);
+  }, [isOpen, fetchRecipes]);
 
   const handleAdd = async (recipe: Recipe) => {
     try {

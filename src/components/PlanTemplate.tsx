@@ -5,10 +5,30 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Save, Copy, Check, X, Calendar, Clock, ChefHat, FileText } from "lucide-react";
 import { useHaptic } from "@/hooks/useHaptic";
 
+interface MealPlan {
+  id: string;
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  foods: Array<{
+    id: string;
+    name: string;
+    quantity: number;
+    unit: string;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  }>;
+}
+
 interface PlanTemplate {
   id: string;
   name: string;
-  planData: any[];
+  planData: MealPlan[];
   targetCalories: number;
   userId?: string;
   createdAt: string;
@@ -16,7 +36,7 @@ interface PlanTemplate {
 
 interface PlanTemplateProps {
   userId: string;
-  currentPlan?: any[];
+  currentPlan?: MealPlan[];
   currentTargetCalories?: number;
   onSaveTemplate?: (template: PlanTemplate) => void;
   onLoadTemplate?: (template: PlanTemplate) => void;

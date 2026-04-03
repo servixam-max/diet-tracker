@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
 // Este endpoint ejecuta el schema SQL en Supabase
 // IMPORTANTE: Solo para uso inicial, luego se puede borrar
+// PROTEGIDO: Solo usuarios autenticados pueden ejecutarlo
 
 const SCHEMA_SQL = `
 -- Diet Tracker Database Schema
@@ -147,13 +149,24 @@ CREATE POLICY "Shopping items: own" ON public.shopping_items FOR ALL USING (
 
 export async function POST() {
   try {
+    // 🔒 PROTECCIÓN: Solo usuarios autenticados pueden ejecutar setup
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: "No autorizado - debes iniciar sesión" },
+        { status: 401 }
+      );
+    }
+
     // Using service role key to bypass RLS for setup
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!serviceKey) {
       return NextResponse.json(
-        { error: "SUPABASE_SERVICE_ROLE_KEY not set" },
+        { error: "Error de configuración del servidor" },
         { status: 500 }
       );
     }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
+
 
 interface MealPlan {
   date: string;
@@ -36,7 +36,7 @@ export function useMealPlan({ userId, weekStart }: UseMealPlanOptions) {
     setLoading(true);
     setError(null);
     try {
-      const supabase = createClient();
+
       const url = weekStart 
         ? `/api/generate-plan?weekStart=${encodeURIComponent(weekStart)}`
         : '/api/generate-plan';
@@ -66,7 +66,7 @@ export function useMealPlan({ userId, weekStart }: UseMealPlanOptions) {
     setLoading(true);
     setError(null);
     try {
-      const supabase = createClient();
+
       const response = await fetch('/api/generate-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

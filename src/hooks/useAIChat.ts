@@ -37,10 +37,10 @@ const QUICK_REPLIES = [
   "Qué como hoy?",
 ];
 
-const OLLAMA_API_URL = process.env.OLLAMA_BASE_URL || "https://ollama.cloud";
-const OLLAMA_MODEL = process.env.OLLAMA_TEXT_MODEL || "llama3.2";
+const OLLAMA_API_URL = process.env.NEXT_PUBLIC_OLLAMA_BASE_URL || "https://ollama.cloud";
+const OLLAMA_MODEL = process.env.NEXT_PUBLIC_OLLAMA_TEXT_MODEL || "llama3.2";
 
-export function useAIChat({ userId, userProfile, userPlan, userGoals }: UseAIChatOptions) {
+export function useAIChat({ userProfile, userPlan, userGoals }: UseAIChatOptions) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +61,7 @@ Puedo analizar tu ingesta, sugerir recetas y darte consejos personalizados. ¿En
         },
       ]);
     }
-  }, []);
+  }, [messages.length, userProfile?.dailyCalories, userProfile?.proteinGoal]);
 
   const buildContextPrompt = useCallback(() => {
     const context = {

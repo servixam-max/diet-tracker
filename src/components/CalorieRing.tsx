@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { memo } from "react";
 
 interface CalorieRingProps {
   current: number;
@@ -9,7 +10,7 @@ interface CalorieRingProps {
   strokeWidth?: number;
 }
 
-export function CalorieRing({ current, target, size = 180, strokeWidth = 12 }: CalorieRingProps) {
+export const CalorieRing = memo(function CalorieRing({ current, target, size = 180, strokeWidth = 12 }: CalorieRingProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const progress = Math.min(current / target, 1);
@@ -91,4 +92,6 @@ export function CalorieRing({ current, target, size = 180, strokeWidth = 12 }: C
       </div>
     </div>
   );
-}
+});
+
+CalorieRing.displayName = 'CalorieRing';

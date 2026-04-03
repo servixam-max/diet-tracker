@@ -1,0 +1,56 @@
+=== DIET TRACKER SERVER ===
+Listening: http://100.126.164.101:8084
+URL: http://100.126.164.101:8084/diet/
+API Proxy: http://100.126.164.101:3002/api
+Serving from: /Users/servimac/Openclaw/diet-tracker
+Press Ctrl+C to stop
+========================================
+=== DIET TRACKER SERVER ===
+Listening: http://100.126.164.101:8084
+URL: http://100.126.164.101:8084/diet/
+API Proxy: http://100.126.164.101:3002/api
+Serving from: /Users/servimac/Openclaw/diet-tracker
+Press Ctrl+C to stop
+========================================
+=== DIET TRACKER SERVER ===
+Listening: http://100.126.164.101:8085
+URL: http://100.126.164.101:8085/diet/
+API Proxy: http://100.126.164.101:3002/api
+Serving from: /Users/servimac/Openclaw/diet-tracker
+Press Ctrl+C to stop
+========================================
+[PROXY] GET /diet/ -> http://100.126.164.101:3002/
+[100.126.164.101] "GET /diet/ HTTP/1.1" 200 -
+[PROXY] GET /diet/ -> http://100.126.164.101:3002/
+[100.126.164.101] "GET /diet/ HTTP/1.1" 200 -
+[PROXY] GET /diet/ -> http://100.126.164.101:3002/
+[100.126.164.101] "GET /diet/ HTTP/1.1" 200 -
+[PROXY] GET /_next/static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2 -> http://100.126.164.101:3002/_next/static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2
+[100.126.164.101] "GET /_next/static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2 HTTP/1.1" 404 -
+[PROXY] GET /_next/static/chunks/02usadrux6us3.css -> http://100.126.164.101:3002/_next/static/chunks/02usadrux6us3.css
+[100.126.164.101] "GET /_next/static/chunks/02usadrux6us3.css HTTP/1.1" 404 -
+[PROXY] GET /_next/static/chunks/0fzb-ej1ut9ay.css -> http://100.126.164.101:3002/_next/static/chunks/0fzb-ej1ut9ay.css
+[100.126.164.101] "GET /_next/static/chunks/0fzb-ej1ut9ay.css HTTP/1.1" 404 -
+[PROXY] GET /_next/static/chunks/0ze4gu236oq96.js -> http://100.126.164.101:3002/_next/static/chunks/0ze4gu236oq96.js
+[100.126.164.101] "GET /_next/static/chunks/0ze4gu236oq96.js HTTP/1.1" 404 -
+[PROXY] GET /_next/static/chunks/01ev0ttsejzot.js -> http://100.126.164.101:3002/_next/static/chunks/01ev0ttsejzot.js
+[100.126.164.101] "GET /_next/static/chunks/01ev0ttsejzot.js HTTP/1.1" 404 -
+[PROXY] GET /_next/static/chunks/0vv1udr4g5sdp.js -> http://100.126.164.101:3002/_next/static/chunks/0vv1udr4g5sdp.js
+[100.126.164.101] "GET /_next/static/chunks/0vv1udr4g5sdp.js HTTP/1.1" 404 -
+[PROXY] GET /manifest.json -> http://100.126.164.101:3002/manifest.json
+[100.126.164.101] "GET /manifest.json HTTP/1.1" 404 -
+[PROXY] GET /diet/ -> http://100.126.164.101:3002/
+[100.126.164.101] "GET /diet/ HTTP/1.1" 200 -
+[PROXY] GET /_next/static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2 -> http://100.126.164.101:3002/_next/static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2
+[100.126.164.101] "GET /_next/static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2 HTTP/1.1" 404 -
+=== DIET TRACKER SERVER ===
+Listening: http://100.126.164.101:8085
+URL: http://100.126.164.101:8085/diet/
+API Proxy: http://100.126.164.101:3002/api
+Serving from: /Users/servimac/Openclaw/diet-tracker
+Press Ctrl+C to stop
+========================================
+[PROXY] GET /diet/ -> http://100.126.164.101:3002/
+[100.126.164.101] "GET /diet/ HTTP/1.1" 200 -
+[PROXY] GET /_next/static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2 -> http://100.126.164.101:3002/_next/static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2
+[100.126.164.101] "GET /_next/static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2 HTTP/1.1" 404 -

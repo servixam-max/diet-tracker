@@ -15,17 +15,32 @@ export function UnitsToggle({ initialUnits = "metric", onUnitsChange }: UnitsTog
   const { light } = useHaptic();
 
   useEffect(() => {
-    const saved = localStorage.getItem("units-preference");
-    if (saved === "metric" || saved === "imperial") {
-      setUnits(saved);
-      onUnitsChange?.(saved);
+    // Validar que estamos en el cliente antes de acceder a localStorage
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("units-preference");
+        if (saved === "metric" || saved === "imperial") {
+          setUnits(saved);
+          onUnitsChange?.(saved);
+        }
+      } catch (error) {
+        console.warn('Error al acceder a localStorage:', error);
+      }
     }
   }, []);
 
   function handleUnitsChange(newUnits: "metric" | "imperial") {
     light();
     setUnits(newUnits);
-    localStorage.setItem("units-preference", newUnits);
+    
+    // Validar que estamos en el cliente antes de acceder a localStorage
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("units-preference", newUnits);
+      } catch (error) {
+        console.warn('Error al guardar en localStorage:', error);
+      }
+    }
     onUnitsChange?.(newUnits);
   }
 

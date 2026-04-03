@@ -184,7 +184,7 @@ export async function generatePlan(options: PlanGeneratorOptions): Promise<Gener
     
     for (const mealType of mealTypes) {
       const targetCal = targets[mealType];
-      let availableRecipes = byMealType[mealType].filter(r => {
+      const availableRecipes = byMealType[mealType].filter(r => {
         // Constraint 1: Max 2x same recipe per week
         const count = state.recipeCounts[r.id] || 0;
         if (count >= 2) return false;

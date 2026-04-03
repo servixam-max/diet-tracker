@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 
 interface NotificationPermission {
   status: "granted" | "denied" | "default" | "unknown";
@@ -15,15 +15,13 @@ interface ScheduledNotification {
 }
 
 export function useNotifications() {
-  const [permission, setPermission] = useState<NotificationPermission["status"]>("unknown");
-  const [scheduledNotifications, setScheduledNotifications] = useState<ScheduledNotification[]>([]);
-
-  // Check permission status on mount
-  useEffect(() => {
-    if (typeof Notification !== "undefined") {
-      setPermission(Notification.permission);
+  const [permission, setPermission] = useState<NotificationPermission["status"]>(() => {
+    if (typeof window !== "undefined" && typeof Notification !== "undefined") {
+      return Notification.permission as NotificationPermission["status"];
     }
-  }, []);
+    return "unknown";
+  });
+  const [scheduledNotifications, setScheduledNotifications] = useState<ScheduledNotification[]>([]);
 
   // Request notification permission
   const requestPermission = useCallback(async (): Promise<boolean> => {

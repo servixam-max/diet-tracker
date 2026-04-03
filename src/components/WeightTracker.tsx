@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Scale, TrendingUp, TrendingDown, Minus, Target, Calendar } from "lucide-react";
+import { Scale, TrendingUp, TrendingDown, Minus, Target } from "lucide-react";
 import { useHaptic } from "@/hooks/useHaptic";
 
 interface WeightEntry {
@@ -16,25 +16,18 @@ interface WeightTrackerProps {
 }
 
 export function WeightTracker({ userId, targetWeight = 75 }: WeightTrackerProps) {
-  const [entries, setEntries] = useState<WeightEntry[]>([]);
-  const [currentWeight, setCurrentWeight] = useState<number | null>(null);
+  const [entries, setEntries] = useState<WeightEntry[]>(() => [
+    { date: "2024-03-01", weight: 82.5 },
+    { date: "2024-03-05", weight: 81.8 },
+    { date: "2024-03-10", weight: 81.2 },
+    { date: "2024-03-15", weight: 80.5 },
+    { date: "2024-03-20", weight: 80.1 },
+    { date: "2024-03-23", weight: 79.8 },
+  ]);
+  const [currentWeight, setCurrentWeight] = useState<number | null>(79.8);
   const [showAdd, setShowAdd] = useState(false);
   const [newWeight, setNewWeight] = useState("");
   const { light, success } = useHaptic();
-
-  useEffect(() => {
-    // Sample data
-    const sample = [
-      { date: "2024-03-01", weight: 82.5 },
-      { date: "2024-03-05", weight: 81.8 },
-      { date: "2024-03-10", weight: 81.2 },
-      { date: "2024-03-15", weight: 80.5 },
-      { date: "2024-03-20", weight: 80.1 },
-      { date: "2024-03-23", weight: 79.8 },
-    ];
-    setEntries(sample);
-    setCurrentWeight(sample[sample.length - 1].weight);
-  }, [userId]);
 
   const startWeight = entries[0]?.weight || 0;
   const weightLost = startWeight - (currentWeight || 0);

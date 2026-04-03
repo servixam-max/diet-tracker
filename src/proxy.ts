@@ -4,7 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 const protectedRoutes = ["/dashboard", "/recipes", "/shopping", "/profile", "/onboarding", "/weekly-plan", "/coach", "/settings"];
 const authRoutes = ["/login", "/register"];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Check for demo mode
