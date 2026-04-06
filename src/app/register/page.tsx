@@ -94,7 +94,7 @@ export default function RegisterPage() {
       } else {
         router.push("/onboarding");
       }
-    } catch (err) {
+    } catch {
       setError("Error de conexión");
     } finally {
       setLoading(false);

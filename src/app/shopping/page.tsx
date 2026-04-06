@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Share2, Check, ShoppingCart, Plus, Trash2, Edit3 } from "lucide-react";
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Share2, Check, ShoppingCart, Trash2 } from "lucide-react";
 import { GenerateShoppingList } from "@/components/GenerateShoppingList";
 import { useHaptic } from "@/hooks/useHaptic";
 
@@ -15,13 +15,6 @@ interface ShoppingItem {
   category: string;
   checked: boolean;
 }
-
-const supermarketColors: Record<string, string> = {
-  Mercadona: "bg-red-500",
-  Lidl: "bg-blue-500",
-  Aldi: "bg-yellow-500",
-  "Family Cash": "bg-purple-500",
-};
 
 const supermarketBadgeColors: Record<string, string> = {
   Mercadona: "bg-red-500/20 text-red-400 border-red-500/30",
@@ -55,10 +48,11 @@ export default function ShoppingPage() {
     setItems((prev) => prev.filter((i) => i.id !== id));
   }
 
-  function addItem(item: ShoppingItem) {
-    success();
-    setItems((prev) => [...prev, item]);
-  }
+  // addItem function commented out until needed
+  // function addItem(item: ShoppingItem) {
+  //   success();
+  //   setItems((prev) => [...prev, item]);
+  // }
 
   async function share() {
     const text = items

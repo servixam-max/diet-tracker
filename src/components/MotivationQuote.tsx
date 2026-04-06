@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Quote, RefreshCw, Heart, Share2 } from "lucide-react";
 import { useHaptic } from "@/hooks/useHaptic";
@@ -29,19 +29,26 @@ interface MotivationQuoteProps {
 }
 
 export function MotivationQuote({ userId }: MotivationQuoteProps) {
-  const [quote, setQuote] = useState<QuoteData>(quotes[0]);
+  const [quoteIndex, setQuoteIndex] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [liked, setLiked] = useState(false);
   const { light, success } = useHaptic();
+
+  // Initialize with random quote on client side
+  useEffect(() => {
+    const randomIndex = Math.floor(Math.random() * quotes.length);
+    setQuoteIndex(randomIndex);
+  }, []);
+
+  const quote = quotes[quoteIndex];
 
   function getNewQuote() {
     setIsRefreshing(true);
     light();
     
     setTimeout(() => {
-      const randomIndex = Math.floor(Math.random() * quotes.length);
-      const randomQuote = quotes[randomIndex];
-      setQuote(randomQuote);
+      const newIndex = Math.floor(Math.random() * quotes.length);
+      setQuoteIndex(newIndex);
       setLiked(false);
       setIsRefreshing(false);
       success();

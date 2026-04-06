@@ -110,11 +110,12 @@ export async function POST(request: NextRequest) {
       message: "Usuario creado exitosamente. Ahora puedes iniciar sesión.",
     });
 
-  } catch (error: any) {
-    console.error("Register error:", error);
+  } catch (err) {
+    console.error("Register error:", err);
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ 
       error: "Error interno del servidor",
-      details: error.message 
+      details: errorMessage 
     }, { status: 500 });
   }
 }

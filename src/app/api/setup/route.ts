@@ -195,10 +195,10 @@ export async function POST() {
           statement: statement.substring(0, 50) + '...',
           status: response.ok ? 'ok' : 'error',
         });
-      } catch (err: any) {
+      } catch (err) {
         results.push({
           statement: statement.substring(0, 50) + '...',
-          error: err.message,
+          error: err instanceof Error ? err.message : String(err),
         });
       }
     }
@@ -209,9 +209,9 @@ export async function POST() {
       results
     });
 
-  } catch (error: any) {
+  } catch (err) {
     return NextResponse.json(
-      { error: error.message },
+      { error: err instanceof Error ? err.message : String(err) },
       { status: 500 }
     );
   }

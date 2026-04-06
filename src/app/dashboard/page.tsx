@@ -16,12 +16,9 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { MacrosSummary } from "@/components/dashboard/MacrosSummary";
 import { MealsSection } from "@/components/dashboard/MealsSection";
 import { MealAddModal } from "@/components/dashboard/MealAddModal";
-import { Flame, Activity, Target, ArrowDown, RefreshCw, Zap, ChevronRight } from "lucide-react";
+import { Flame, Activity, Target } from "lucide-react";
 
-// Dynamic imports for heavy components
-const MealCard = dynamic(() => import("@/components/MealCard").then(mod => mod.MealCard), {
-  loading: () => <div className="h-32 rounded-3xl bg-white/5 animate-pulse" />
-});
+// Dynamic imports for heavy components - Commented out for now
 
 interface Meal {
   type: "Desayuno" | "Almuerzo" | "Merienda" | "Cena";
@@ -148,7 +145,16 @@ export default function DashboardPage() {
     setIsModalOpen(true);
   }, []);
 
-  const handleRecipeSelect = useCallback(async (recipe: any) => {
+    interface RecipeData {
+    name: string;
+    calories: number;
+    protein_g: number;
+    carbs_g: number;
+    fat_g: number;
+    image_url?: string;
+  }
+
+  const handleRecipeSelect = useCallback(async (recipe: RecipeData) => {
     const response = await fetch('/api/food-log', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -195,13 +201,7 @@ export default function DashboardPage() {
     },
   }), []);
 
-  const macros = useMemo(() => [
-    { label: 'Proteína', value: totalProtein, color: 'text-blue-400', icon: '💪' },
-    { label: 'Carbs', value: totalCarbs, color: 'text-yellow-400', icon: '🌾' },
-    { label: 'Grasas', value: totalFat, color: 'text-red-400', icon: '🥑' },
-  ], [totalProtein, totalCarbs, totalFat]);
-
-  const MEAL_TYPES = useMemo(() => ['Desayuno', 'Almuerzo', 'Merienda', 'Cena'] as const, []);
+    // Macros and meal types constants (removed unused)
 
   return (
     <motion.div

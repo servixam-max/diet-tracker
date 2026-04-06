@@ -1,25 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { GoalsSettings } from "@/components/GoalsSettings";
 import { MacroCalculator } from "@/components/MacroCalculator";
-import { NotificationSettings } from "@/components/NotificationSettings";
+import { NotificationManager } from "@/components/NotificationManager";
+import { WeeklyReport } from "@/components/WeeklyReport";
+import { OfflineManager } from "@/components/OfflineManager";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { UnitsToggle } from "@/components/UnitsToggle";
 import { DataExport } from "@/components/DataExport";
+import { Bell, BarChart3, Wifi, Calculator, Target, Palette } from "lucide-react";
+
+function getIsDemo(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("demo-mode") === "true";
+}
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<"goals" | "calculator" | "notifications" | "appearance">("goals");
+  const [activeTab, setActiveTab] = useState<"goals" | "calculator" | "notifications" | "analytics" | "offline" | "appearance">("goals");
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [isDemo, setIsDemo] = useState(false);
-
-  useEffect(() => {
-    setIsDemo(localStorage.getItem("demo-mode") === "true");
-  }, []);
+  const [isDemo] = useState(() => getIsDemo());
 
   if (!loading && !user && !isDemo) {
     router.push("/login");
@@ -27,11 +30,13 @@ export default function SettingsPage() {
   }
 
   const tabs = [
-    { id: "goals", label: "Objetivos" },
-    { id: "calculator", label: "Calculadora" },
-    { id: "notifications", label: "Notificaciones" },
-    { id: "appearance", label: "Apariencia" },
-  ];
+    { id: "goals", label: "Objetivos", icon: Target },
+    { id: "calculator", label: "Calculadora", icon: Calculator },
+    { id: "notifications", label: "Notificaciones", icon: Bell },
+    { id: "analytics", label: "Reportes", icon: BarChart3 },
+    { id: "offline", label: "Offline", icon: Wifi },
+    { id: "appearance", label: "Apariencia", icon: Palette },
+  ] as const;
 
   return (
     <div className="h-full flex flex-col relative overflow-hidden">
@@ -44,11 +49,12 @@ export default function SettingsPage() {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${
                   activeTab === tab.id ? "bg-green-500 text-white" : "bg-white/5 text-zinc-400"
                 }`}
               >
+                <tab.icon size={16} />
                 {tab.label}
               </button>
             ))}
@@ -58,8 +64,15 @@ export default function SettingsPage() {
         <div className="flex-1 overflow-y-auto no-scrollbar px-5 pb-4">
           {activeTab === "goals" && <GoalsSettings userId={user?.id || ""} />}
           {activeTab === "calculator" && <MacroCalculator onSave={(macros) => console.log("Macros saved:", macros)} />}
-          {activeTab === "notifications" && <><NotificationSettings userId={user?.id || ""} /><div className="mt-4"><DataExport userId={user?.id || ""} /></div></>}
-          {activeTab === "appearance" && <><ThemeToggle /><UnitsToggle /></>}
+          {activeTab === "notifications" && <NotificationManager userId={user?.id || ""} />}
+          {activeTab === "analytics" && <WeeklyReport userId={user?.id || ""} />}
+          {activeTab === "offline" && <OfflineManager userId={user?.id || ""} />}
+          {activeTab === "appearance" && (
+            <div className="space-y-4">
+              <ThemeToggle />
+              <DataExport userId={user?.id || ""} />
+            </div>
+          )}
         </div>
       </div>
     </div>

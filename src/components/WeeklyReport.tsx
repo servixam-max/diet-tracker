@@ -1,8 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { BarChart3, TrendingUp, TrendingDown, Minus, Award, Target, Flame, Droplets } from "lucide-react";
+import { 
+  TrendingUp, Download, Calendar, FileText, Share2, 
+  BarChart3, PieChart, LineChart, ChevronLeft, ChevronRight,
+  Printer, Check
+} from "lucide-react";
 import { useHaptic } from "@/hooks/useHaptic";
 
 interface WeeklyReportProps {
@@ -10,178 +14,365 @@ interface WeeklyReportProps {
 }
 
 interface WeekData {
+  week: string;
+  calories: number[];
   avgCalories: number;
-  avgProtein: number;
-  avgCarbs: number;
-  avgFat: number;
-  totalExercise: number;
-  avgWater: number;
-  avgSleep: number;
-  streak: number;
-  daysOnTarget: number;
-  comparison: {
-    calories: number;
-    weight: number;
-    exercise: number;
-  };
-}
-
-interface StatCardProps {
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  label: string;
-  value: number | string;
-  unit: string;
-  change?: number;
-  color: string;
-}
-
-function StatCard({ icon: Icon, label, value, unit, change, color }: StatCardProps) {
-  return (
-    <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-      <div className="flex items-center gap-2 mb-2">
-        <Icon size={18} className={color} />
-        <span className="text-sm text-zinc-400">{label}</span>
-      </div>
-      <p className="text-2xl font-bold">{value}<span className="text-sm text-zinc-500 ml-1">{unit}</span></p>
-      {change !== undefined && (
-        <div className={`flex items-center gap-1 mt-1 text-sm ${change > 0 ? "text-green-400" : change < 0 ? "text-red-400" : "text-zinc-400"}`}>
-          {change > 0 ? <TrendingUp size={14} /> : change < 0 ? <TrendingDown size={14} /> : <Minus size={14} />}
-          <span>{Math.abs(change)}% vs semana anterior</span>
-        </div>
-      )}
-    </div>
-  );
+  protein: number[];
+  carbs: number[];
+  fat: number[];
+  weight: number[];
+  workouts: number;
+  daysTracked: number;
 }
 
 export function WeeklyReport({ userId }: WeeklyReportProps) {
-  const [report, setReport] = useState<WeekData | null>(null);
-  const { light } = useHaptic();
+  const [currentWeek, setCurrentWeek] = useState(0);
+  const [weeksData, setWeeksData] = useState<WeekData[]>([]);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
+  const [pdfGenerated, setPdfGenerated] = useState(false);
+  const { light, success } = useHaptic();
 
+  // Generate sample data
   useEffect(() => {
-    // Generate sample report
-    const sample: WeekData = {
-      avgCalories: 1850,
-      avgProtein: 95,
-      avgCarbs: 180,
-      avgFat: 65,
-      totalExercise: 240,
-      avgWater: 2100,
-      avgSleep: 7.2,
-      streak: 12,
-      daysOnTarget: 5,
-      comparison: {
-        calories: -8,
-        weight: -1.2,
-        exercise: 15,
-      },
-    };
-    setReport(sample);
-  }, [userId]);
+    const weeks: WeekData[] = [];
+    const today = new Date();
+    
+    for (let i = 3; i >= 0; i--) {
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - (i * 7) - today.getDay());
+      
+      const weekData: WeekData = {
+        week: weekStart.toLocaleDateString("es-ES", { day: "numeric", month: "short" }),
+        calories: Array.from({ length: 7 }, () => 1800 + Math.random() * 600),
+        avgCalories: 0,
+        protein: Array.from({ length: 7 }, () => 80 + Math.random() * 60),
+        carbs: Array.from({ length: 7 }, () => 150 + Math.random() * 100),
+        fat: Array.from({ length: 7 }, () => 40 + Math.random() * 40),
+        weight: Array.from({ length: 7 }, (_, idx) => 75 - (i * 0.2) - (idx * 0.05)),
+        workouts: Math.floor(Math.random() * 5) + 2,
+        daysTracked: 7,
+      };
+      
+      weekData.avgCalories = weekData.calories.reduce((a, b) => a + b, 0) / 7;
+      weeks.push(weekData);
+    }
+    
+    setWeeksData(weeks);
+  }, []);
 
-  if (!report) return null;
+  const currentData = weeksData[currentWeek];
+
+  const stats = useMemo(() => {
+    if (!currentData) return null;
+    
+    const avgProtein = currentData.protein.reduce((a, b) => a + b, 0) / 7;
+    const avgCarbs = currentData.carbs.reduce((a, b) => a + b, 0) / 7;
+    const avgFat = currentData.fat.reduce((a, b) => a + b, 0) / 7;
+    const avgWeight = currentData.weight.reduce((a, b) => a + b, 0) / 7;
+    const weightChange = currentData.weight[6] - currentData.weight[0];
+    
+    return {
+      avgCalories: Math.round(currentData.avgCalories),
+      avgProtein: Math.round(avgProtein),
+      avgCarbs: Math.round(avgCarbs),
+      avgFat: Math.round(avgFat),
+      avgWeight: avgWeight.toFixed(1),
+      weightChange: weightChange.toFixed(2),
+      workouts: currentData.workouts,
+      adherence: Math.round((currentData.daysTracked / 7) * 100),
+    };
+  }, [currentData]);
+
+  function nextWeek() {
+    light();
+    if (currentWeek < weeksData.length - 1) {
+      setCurrentWeek((prev) => prev + 1);
+    }
+  }
+
+  function prevWeek() {
+    light();
+    if (currentWeek > 0) {
+      setCurrentWeek((prev) => prev - 1);
+    }
+  }
+
+  async function generatePDF() {
+    setGeneratingPDF(true);
+    light();
+    
+    // Simulate PDF generation
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    
+    setGeneratingPDF(false);
+    setPdfGenerated(true);
+    success();
+    
+    setTimeout(() => setPdfGenerated(false), 3000);
+  }
+
+  function downloadCSV() {
+    if (!stats) return;
+    
+    const csvContent = `
+Semana,Calorías Promedio,Proteína Promedio,Carbs Promedio,Grasa Promedio,Peso Promedio,Cambio Peso
+${currentData?.week},${stats.avgCalories},${stats.avgProtein},${stats.avgCarbs},${stats.avgFat},${stats.avgWeight},${stats.weightChange}
+    `.trim();
+    
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `reporte-semanal-${currentData?.week}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    success();
+  }
+
+  function printReport() {
+    window.print();
+    light();
+  }
+
+  if (!stats || !currentData) {
+    return (
+      <div className="p-8 text-center">
+        <div className="w-12 h-12 mx-auto mb-4 rounded-full border-2 border-t-green-500 border-white/20 animate-spin" />
+        <p className="text-zinc-400">Generando reporte...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <BarChart3 size={18} className="text-green-400" />
-        <h3 className="font-semibold">Informe semanal</h3>
-      </div>
-
-      {/* Header */}
-      <div className="p-4 rounded-2xl bg-gradient-to-br from-green-500/10 to-emerald-500/5 border border-green-500/20">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="text-sm text-zinc-400">Resumen de la semana</p>
-            <p className="text-xl font-bold">Semana del 1-7 Marzo</p>
-          </div>
-          <div className="text-right">
-            <p className="text-3xl">🔥</p>
-            <p className="text-sm font-bold text-orange-400">{report.streak} días</p>
-          </div>
+    <div className="space-y-6 print:space-y-4">
+      {/* Header with week selector */}
+      <div className="flex items-center justify-between">
+        <motion.button
+          onClick={prevWeek}
+          disabled={currentWeek === 0}
+          className="p-2 rounded-xl bg-white/5 border border-white/10 disabled:opacity-30"
+          whileTap={{ scale: 0.95 }}
+        >
+          <ChevronLeft size={20} />
+        </motion.button>
+        
+        <div className="text-center">
+          <p className="text-sm text-zinc-400">Semana del</p>
+          <p className="font-bold text-lg">{currentData.week}</p>
         </div>
         
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-white/5">
-          <Award size={20} className="text-yellow-400" />
-          <div className="flex-1">
-            <p className="font-medium">{report.daysOnTarget}/7 días en objetivo</p>
-            <p className="text-xs text-zinc-400">kcal, macros y agua</p>
-          </div>
-          <span className="text-2xl font-bold text-green-400">{Math.round((report.daysOnTarget/7)*100)}%</span>
-        </div>
+        <motion.button
+          onClick={nextWeek}
+          disabled={currentWeek === weeksData.length - 1}
+          className="p-2 rounded-xl bg-white/5 border border-white/10 disabled:opacity-30"
+          whileTap={{ scale: 0.95 }}
+        >
+          <ChevronRight size={20} />
+        </motion.button>
       </div>
 
-      {/* Stats grid */}
+      {/* Key metrics */}
       <div className="grid grid-cols-2 gap-3">
-        <StatCard icon={Flame} label="Calorías promedio" value={report.avgCalories} unit="kcal" change={report.comparison.calories} color="text-orange-400" />
-        <StatCard icon={Target} label="Proteína promedio" value={report.avgProtein} unit="g" color="text-blue-400" />
-        <StatCard icon={Droplets} label="Agua promedio" value={report.avgWater} unit="ml" change={5} color="text-cyan-400" />
-        <StatCard icon={BarChart3} label="Ejercicio total" value={report.totalExercise} unit="min" change={report.comparison.exercise} color="text-purple-400" />
+        <motion.div
+          className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/10 to-orange-500/5 border border-amber-500/20"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp size={16} className="text-amber-400" />
+            <span className="text-sm text-zinc-400">Promedio cal</span>
+          </div>
+          <p className="text-2xl font-bold">{stats.avgCalories}</p>
+          <p className="text-xs text-zinc-500">kcal/día</p>
+        </motion.div>
+
+        <motion.div
+          className={`p-4 rounded-2xl border ${
+            parseFloat(stats.weightChange) < 0
+              ? "bg-green-500/10 border-green-500/20"
+              : "bg-red-500/10 border-red-500/20"
+          }`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <LineChart size={16} className={parseFloat(stats.weightChange) < 0 ? "text-green-400" : "text-red-400"} />
+            <span className="text-sm text-zinc-400">Cambio peso</span>
+          </div>
+          <p className={`text-2xl font-bold ${parseFloat(stats.weightChange) < 0 ? "text-green-400" : "text-red-400"}`}>
+            {parseFloat(stats.weightChange) > 0 ? "+" : ""}
+            {stats.weightChange} kg
+          </p>
+          <p className="text-xs text-zinc-500">esta semana</p>
+        </motion.div>
+
+        <motion.div
+          className="p-4 rounded-2xl bg-white/5 border border-white/10"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <Calendar size={16} className="text-blue-400" />
+            <span className="text-sm text-zinc-400">Adherencia</span>
+          </div>
+          <p className="text-2xl font-bold">{stats.adherence}%</p>
+          <p className="text-xs text-zinc-500">{currentData.daysTracked}/7 días</p>
+        </motion.div>
+
+        <motion.div
+          className="p-4 rounded-2xl bg-white/5 border border-white/10"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <BarChart3 size={16} className="text-purple-400" />
+            <span className="text-sm text-zinc-400">Entrenos</span>
+          </div>
+          <p className="text-2xl font-bold">{stats.workouts}</p>
+          <p className="text-xs text-zinc-500">sessiones</p>
+        </motion.div>
       </div>
 
       {/* Macros breakdown */}
-      <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-        <p className="text-sm text-zinc-400 mb-3">Desglose de macronutrientes</p>
-        <div className="space-y-3">
-          <div>
-            <div className="flex justify-between text-sm mb-1">
-              <span>Proteína</span>
-              <span className="text-blue-400">{report.avgProtein}g</span>
-            </div>
-            <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-              <motion.div
-                className="h-full bg-blue-500 rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${(report.avgProtein / 150) * 100}%` }}
-              />
-            </div>
+      <motion.div
+        className="p-4 rounded-2xl bg-white/5 border border-white/10"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <PieChart size={18} className="text-amber-400" />
+          <p className="font-semibold">Macronutrientes promedio</p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-center">
+            <p className="text-xl font-bold text-blue-400">{stats.avgProtein}g</p>
+            <p className="text-xs text-zinc-400 mt-1">Proteína</p>
+            <p className="text-xs text-zinc-500">{Math.round((stats.avgProtein * 4 / stats.avgCalories) * 100)}%</p>
           </div>
-          <div>
-            <div className="flex justify-between text-sm mb-1">
-              <span>Carbohidratos</span>
-              <span className="text-yellow-400">{report.avgCarbs}g</span>
-            </div>
-            <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-              <motion.div
-                className="h-full bg-yellow-500 rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${(report.avgCarbs / 250) * 100}%` }}
-              />
-            </div>
+          <div className="p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-center">
+            <p className="text-xl font-bold text-yellow-400">{stats.avgCarbs}g</p>
+            <p className="text-xs text-zinc-400 mt-1">Carbos</p>
+            <p className="text-xs text-zinc-500">{Math.round((stats.avgCarbs * 4 / stats.avgCalories) * 100)}%</p>
           </div>
-          <div>
-            <div className="flex justify-between text-sm mb-1">
-              <span>Grasas</span>
-              <span className="text-red-400">{report.avgFat}g</span>
-            </div>
-            <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-              <motion.div
-                className="h-full bg-red-500 rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${(report.avgFat / 80) * 100}%` }}
-              />
-            </div>
+          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
+            <p className="text-xl font-bold text-red-400">{stats.avgFat}g</p>
+            <p className="text-xs text-zinc-400 mt-1">Grasas</p>
+            <p className="text-xs text-zinc-500">{Math.round((stats.avgFat * 9 / stats.avgCalories) * 100)}%</p>
           </div>
         </div>
+      </motion.div>
+
+      {/* Weight chart */}
+      <motion.div
+        className="p-4 rounded-2xl bg-white/5 border border-white/10"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25 }}
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <LineChart size={18} className="text-green-400" />
+          <p className="font-semibold">Evolución de peso</p>
+        </div>
+
+        <div className="h-32 flex items-end gap-1">
+          {currentData.weight.map((w, i) => {
+            const minW = Math.min(...currentData.weight);
+            const maxW = Math.max(...currentData.weight);
+            const range = maxW - minW || 1;
+            const height = ((w - minW) / range) * 100;
+            
+            return (
+              <motion.div
+                key={i}
+                className="flex-1 bg-gradient-to-t from-green-500/50 to-green-500/20 rounded-t"
+                initial={{ height: 0 }}
+                animate={{ height: `${Math.max(10, height)}%` }}
+                transition={{ delay: i * 0.05 }}
+              />
+            );
+          })}
+        </div>
+        <div className="flex justify-between mt-2 text-xs text-zinc-500">
+          <span>Lun</span>
+          <span>Mar</span>
+          <span>Mié</span>
+          <span>Jue</span>
+          <span>Vie</span>
+          <span>Sáb</span>
+          <span>Dom</span>
+        </div>
+      </motion.div>
+
+      {/* Export buttons */}
+      <div className="grid grid-cols-3 gap-2">
+        <motion.button
+          onClick={generatePDF}
+          disabled={generatingPDF || pdfGenerated}
+          className={`py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-all ${
+            pdfGenerated
+              ? "bg-green-500/20 text-green-400 border border-green-500/30"
+              : "bg-white/5 border border-white/10 hover:bg-white/10"
+          }`}
+          whileTap={{ scale: 0.98 }}
+        >
+          {generatingPDF ? (
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            >
+              <FileText size={16} />
+            </motion.div>
+          ) : pdfGenerated ? (
+            <><Check size={16} /> PDF</>
+          ) : (
+            <><FileText size={16} /> PDF</>
+          )}
+        </motion.button>
+
+        <motion.button
+          onClick={downloadCSV}
+          className="py-3 rounded-xl font-medium bg-white/5 border border-white/10 flex items-center justify-center gap-2 hover:bg-white/10 transition-colors"
+          whileTap={{ scale: 0.98 }}
+        >
+          <Download size={16} />
+          CSV
+        </motion.button>
+
+        <motion.button
+          onClick={printReport}
+          className="py-3 rounded-xl font-medium bg-white/5 border border-white/10 flex items-center justify-center gap-2 hover:bg-white/10 transition-colors"
+          whileTap={{ scale: 0.98 }}
+        >
+          <Printer size={16} />
+          Imprimir
+        </motion.button>
       </div>
 
-      {/* Achievements */}
-      <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-        <p className="text-sm text-zinc-400 mb-3">🏆 Logros de la semana</p>
-        <div className="space-y-2">
-          <div className="flex items-center gap-3 p-2">
-            <span className="text-xl">🎯</span>
-            <span className="text-sm">5 días consecutivos en objetivo calórico</span>
-          </div>
-          <div className="flex items-center gap-3 p-2">
-            <span className="text-xl">💪</span>
-            <span className="text-sm">240 minutos de ejercicio (meta: 150)</span>
-          </div>
-          <div className="flex items-center gap-3 p-2">
-            <span className="text-xl">😴</span>
-            <span className="text-sm">Promedio de sueño: 7.2h</span>
-          </div>
-        </div>
-      </div>
+      {/* Share button */}
+      <motion.button
+        onClick={() => {
+          if (navigator.share) {
+            navigator.share({
+              title: "Mi reporte semanal - Diet Tracker",
+              text: `Semana ${currentData.week}: ${stats.avgCalories} kcal/día, ${stats.avgWeight}kg, ${stats.workouts} entrenos`,
+            });
+          }
+          light();
+        }}
+        className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-medium flex items-center justify-center gap-2"
+        whileTap={{ scale: 0.98 }}
+      >
+        <Share2 size={18} />
+        Compartir reporte
+      </motion.button>
     </div>
   );
 }

@@ -4,18 +4,29 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
-import { User, Target, Award, Settings, ChevronRight, Shield } from "lucide-react";
+import { User, Target, Award, Settings, ChevronRight, Shield, TrendingUp, Camera, Ruler, Trophy, Zap } from "lucide-react";
+import { WeightChart } from "@/components/WeightChart";
+import { BodyMeasurements } from "@/components/BodyMeasurements";
+import { ProgressPhotos } from "@/components/ProgressPhotos";
+import { StreakCounter } from "@/components/StreakCounter";
+import { AchievementBadge } from "@/components/AchievementBadge";
+
+function getIsDemo(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("demo-mode") === "true";
+}
 
 export default function ProfilePage() {
-  const [isDemo, setIsDemo] = useState(false);
+  const [isDemo] = useState(() => getIsDemo());
   const [isReady, setIsReady] = useState(false);
   const router = useRouter();
   const { user, logout, loading } = useAuth();
 
+  // Initialize ready state
   useEffect(() => {
-    const demo = localStorage.getItem("demo-mode") === "true";
-    setIsDemo(demo);
-    setIsReady(true);
+    // Delay to avoid hydration mismatch
+    const timeout = setTimeout(() => setIsReady(true), 0);
+    return () => clearTimeout(timeout);
   }, []);
 
   useEffect(() => {
@@ -110,12 +121,77 @@ export default function ProfilePage() {
           </div>
         </motion.div>
 
+        {/* Progress Stats */}
+        <motion.div
+          className="grid grid-cols-4 gap-2"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20 text-center">
+            <TrendingUp size={18} className="mx-auto mb-1 text-blue-400" />
+            <p className="text-lg font-bold">-5</p>
+            <p className="text-xs text-zinc-500">kg</p>
+          </div>
+          <div className="p-3 rounded-2xl bg-gradient-to-br from-purple-500/10 to-pink-600/5 border border-purple-500/20 text-center">
+            <Camera size={18} className="mx-auto mb-1 text-purple-400" />
+            <p className="text-lg font-bold">3</p>
+            <p className="text-xs text-zinc-500">fotos</p>
+          </div>
+          <div className="p-3 rounded-2xl bg-gradient-to-br from-orange-500/10 to-amber-600/5 border border-orange-500/20 text-center">
+            <Trophy size={18} className="mx-auto mb-1 text-orange-400" />
+            <p className="text-lg font-bold">7</p>
+            <p className="text-xs text-zinc-500">logros</p>
+          </div>
+          <div className="p-3 rounded-2xl bg-gradient-to-br from-green-500/10 to-emerald-600/5 border border-green-500/20 text-center">
+            <Zap size={18} className="mx-auto mb-1 text-green-400" />
+            <p className="text-lg font-bold">12</p>
+            <p className="text-xs text-zinc-500">días</p>
+          </div>
+        </motion.div>
+
+        {/* Weight Chart */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <WeightChart currentWeight={75} targetWeight={70} />
+        </motion.div>
+
+        {/* Body Measurements */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+        >
+          <BodyMeasurements userId={user?.id || 'demo'} />
+        </motion.div>
+
+        {/* Progress Photos */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <ProgressPhotos userId={user?.id || 'demo'} />
+        </motion.div>
+
+        {/* Achievements */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 }}
+        >
+          <AchievementBadge userId={user?.id || 'demo'} />
+        </motion.div>
+
         {/* Settings */}
         <motion.div
           className="p-4 rounded-2xl bg-white/5 border border-white/5"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.5 }}
         >
           <div className="flex items-center gap-3 mb-3">
             <Settings size={20} className="text-zinc-400" />
