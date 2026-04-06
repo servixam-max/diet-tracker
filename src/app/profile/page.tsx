@@ -1,65 +1,93 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
-import { User, Target, Award, Settings, ChevronRight, Shield, TrendingUp, Camera, Ruler, Trophy, Zap } from "lucide-react";
+import { User, Target, Award, Settings, ChevronRight, Shield, TrendingUp, Camera, Trophy, Zap } from "lucide-react";
 import { WeightChart } from "@/components/WeightChart";
 import { BodyMeasurements } from "@/components/BodyMeasurements";
 import { ProgressPhotos } from "@/components/ProgressPhotos";
-import { StreakCounter } from "@/components/StreakCounter";
 import { AchievementBadge } from "@/components/AchievementBadge";
+
+// Lazy load heavy components
+import dynamic from "next/dynamic";
 
 function getIsDemo(): boolean {
   if (typeof window === "undefined") return false;
   return localStorage.getItem("demo-mode") === "true";
 }
 
+// Loading fallback
+function ComponentLoader() {
+  return (
+    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 animate-pulse">
+      <div className="h-20 bg-white/10 rounded-xl" />
+    </div>
+  );
+}
+
 export default function ProfilePage() {
-  const [isDemo] = useState(() => getIsDemo());
-  const [isReady, setIsReady] = useState(false);
+  const [isDemo, setIsDemo] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const router = useRouter();
   const { user, logout, loading } = useAuth();
 
-  // Initialize ready state
+  // Initialize client-side only
   useEffect(() => {
-    // Delay to avoid hydration mismatch
-    const timeout = setTimeout(() => setIsReady(true), 0);
-    return () => clearTimeout(timeout);
+    setIsClient(true);
+    setIsDemo(getIsDemo());
   }, []);
 
+  // Redirect if not logged in and not demo
   useEffect(() => {
-    if (isReady && !loading && !user && !isDemo) {
+    if (isClient && !loading && !user && !isDemo) {
       router.push("/login");
     }
-  }, [user, loading, router, isDemo, isReady]);
+  }, [isClient, loading, user, isDemo, router]);
 
   async function handleLogout() {
-    await logout();
+    try {
+      await logout();
+      localStorage.removeItem("demo-mode");
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  }
+
+  function goToLogin() {
     localStorage.removeItem("demo-mode");
     router.push("/login");
   }
 
-  if (!isReady || loading) {
+  function goToRegister() {
+    router.push("/register");
+  }
+
+  // Show loading state
+  if (!isClient || loading) {
     return (
-      <div className="h-full flex items-center justify-center">
+      <div className="min-h-screen bg-[#0a0a0f] text-white flex items-center justify-center">
         <motion.div
           className="w-8 h-8 border-4 border-white/20 border-t-green-500 rounded-full"
           animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white pb-24">
+    <div className="min-h-screen bg-[#0a0a0f] text-white pb-32">
+      {/* Header */}
       <div className="px-5 pt-8 pb-6">
         <h1 className="text-2xl font-bold">Perfil</h1>
-        <span className="inline-block mt-2 px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-xs">
-          Modo Demo
-        </span>
+        {isDemo && (
+          <span className="inline-block mt-2 px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-xs">
+            Modo Demo
+          </span>
+        )}
       </div>
 
       <div className="px-5 space-y-6">
@@ -74,31 +102,37 @@ export default function ProfilePage() {
               <User size={32} className="text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-bold">Usuario Demo</h2>
-              <p className="text-sm text-zinc-400">demo@ejemplo.com</p>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Demo Notice */}
-        <motion.div 
-          className="p-4 rounded-2xl bg-yellow-500/10 border border-yellow-500/20"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <div className="flex items-start gap-3">
-            <Shield size={20} className="text-yellow-400 mt-0.5" />
-            <div>
-              <p className="font-medium text-yellow-400">Modo demostración</p>
+              <h2 className="text-lg font-bold">
+                {user?.email ? user.email.split('@')[0] : "Usuario Demo"}
+              </h2>
               <p className="text-sm text-zinc-400">
-                Los datos son ejemplos. Inicia sesión para guardar progreso real.
+                {user?.email || "demo@ejemplo.com"}
               </p>
             </div>
           </div>
         </motion.div>
 
-        {/* Stats */}
+        {/* Demo Notice */}
+        {isDemo && (
+          <motion.div 
+            className="p-4 rounded-2xl bg-yellow-500/10 border border-yellow-500/20"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className="flex items-start gap-3">
+              <Shield size={20} className="text-yellow-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-yellow-400">Modo demostración</p>
+                <p className="text-sm text-zinc-400">
+                  Los datos son ejemplos. Inicia sesión para guardar progreso real.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Stats Grid */}
         <motion.div 
           className="grid grid-cols-2 gap-3"
           initial={{ opacity: 0, y: 20 }}
@@ -150,41 +184,22 @@ export default function ProfilePage() {
           </div>
         </motion.div>
 
-        {/* Weight Chart */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
+        {/* Components with Suspense */}
+        <Suspense fallback={<ComponentLoader />}>
           <WeightChart currentWeight={75} targetWeight={70} />
-        </motion.div>
+        </Suspense>
 
-        {/* Body Measurements */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-        >
+        <Suspense fallback={<ComponentLoader />}>
           <BodyMeasurements userId={user?.id || 'demo'} />
-        </motion.div>
+        </Suspense>
 
-        {/* Progress Photos */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
+        <Suspense fallback={<ComponentLoader />}>
           <ProgressPhotos userId={user?.id || 'demo'} />
-        </motion.div>
+        </Suspense>
 
-        {/* Achievements */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.45 }}
-        >
+        <Suspense fallback={<ComponentLoader />}>
           <AchievementBadge userId={user?.id || 'demo'} />
-        </motion.div>
+        </Suspense>
 
         {/* Settings */}
         <motion.div
@@ -198,60 +213,65 @@ export default function ProfilePage() {
             <h3 className="font-semibold">Configuración</h3>
           </div>
           <div className="space-y-1">
-            <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors">
-              <span className="text-zinc-400 text-sm">Notificaciones</span>
-              <ChevronRight size={16} className="text-zinc-600" />
-            </button>
-            <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors">
-              <span className="text-zinc-400 text-sm">Unidades</span>
-              <ChevronRight size={16} className="text-zinc-600" />
-            </button>
-            <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors">
-              <span className="text-zinc-400 text-sm">Exportar datos</span>
+            <button 
+              onClick={() => router.push('/settings')}
+              className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors"
+            >
+              <span className="text-zinc-400 text-sm">Ajustes avanzados</span>
               <ChevronRight size={16} className="text-zinc-600" />
             </button>
           </div>
         </motion.div>
 
         {/* Demo Mode Actions */}
-        <motion.div
-          className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <User size={20} className="text-green-400" />
-            <h3 className="font-semibold">Cuenta</h3>
-          </div>
-          
-          <p className="text-sm text-zinc-400">
-            Estás en modo demo. Los datos no se guardan permanentemente.
-          </p>
-          
-          <motion.button 
-            onClick={() => {
-              localStorage.removeItem("demo-mode");
-              router.push("/login");
-            }}
-            className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold shadow-lg shadow-green-500/25"
-            whileTap={{ scale: 0.98 }}
+        {isDemo && (
+          <motion.div
+            className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55 }}
           >
-            <User size={20} />
-            <span>Iniciar sesión real</span>
-          </motion.button>
-          
-          <motion.button 
-            onClick={() => router.push("/register")}
-            className="w-full flex items-center justify-center gap-2 p-3 rounded-2xl bg-white/10 border border-white/20 text-white font-medium"
-            whileTap={{ scale: 0.98 }}
-          >
-            <span>Crear cuenta nueva</span>
-          </motion.button>
-        </motion.div>
+            <div className="flex items-center gap-3 mb-2">
+              <User size={20} className="text-green-400" />
+              <h3 className="font-semibold">Cuenta</h3>
+            </div>
+            
+            <p className="text-sm text-zinc-400">
+              Estás en modo demo. Los datos no se guardan permanentemente.
+            </p>
+            
+            <button 
+              onClick={goToLogin}
+              className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold shadow-lg shadow-green-500/25 active:scale-95 transition-transform"
+            >
+              <User size={20} />
+              <span>Iniciar sesión real</span>
+            </button>
+            
+            <button 
+              onClick={goToRegister}
+              className="w-full flex items-center justify-center gap-2 p-3 rounded-2xl bg-white/10 border border-white/20 text-white font-medium active:scale-95 transition-transform"
+            >
+              <span>Crear cuenta nueva</span>
+            </button>
+          </motion.div>
+        )}
 
-        {/* Spacer for BottomNavBar */}
-        <div className="h-24" />
+        {/* Logout button for logged in users */}
+        {!isDemo && user && (
+          <motion.button 
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl bg-red-500/20 border border-red-500/30 text-red-400 font-medium active:scale-95 transition-transform"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <span>Cerrar sesión</span>
+          </motion.button>
+        )}
+
+        {/* Extra space for BottomNavBar */}
+        <div className="h-20" />
       </div>
     </div>
   );
