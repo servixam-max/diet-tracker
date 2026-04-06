@@ -6,10 +6,10 @@
   "outputDirectory": ".next",
   "regions": ["fra1"],
   "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "@next_public_supabase_url",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@next_public_supabase_anon_key",
-    "NEXT_PUBLIC_OLLAMA_BASE_URL": "@next_public_ollama_base_url",
-    "NEXT_PUBLIC_OLLAMA_TEXT_MODEL": "@next_public_ollama_text_model",
-    "NEXT_PUBLIC_OLLAMA_VISION_MODEL": "@next_public_ollama_vision_model"
+    "NEXT_PUBLIC_SUPABASE_URL": "https://vvtgpztnytpxoacoflas.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2dGdwenRueXRweG9hY29mbGFzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyOTI0NTEsImV4cCI6MjA4OTg2ODQ1MX0.eSsCLTiByilg-SHDB5GvGPJam9Gij9eMSelUr_WOuzk",
+    "NEXT_PUBLIC_OLLAMA_BASE_URL": "https://api.ollama.com",
+    "NEXT_PUBLIC_OLLAMA_TEXT_MODEL": "kimi-k2.5",
+    "NEXT_PUBLIC_OLLAMA_VISION_MODEL": "kimi-k2.5-vision"
   }
 }

@@ -76,7 +76,7 @@ export const RECIPES: Recipe[] = [
     difficulty: "Fácil",
     tags: ["Alto en proteína", "Bajo en carbs", "Sin gluten"],
     supermarket: "Mercadona",
-    image: "https://images.unsplash.com/photo-1546793665-c74683f339c1?w=600",
+    image: "https://images.unsplash.com/photo-1546793665-c74683f339c1?w=600&h=400&fit=crop&auto=format",
     mealType: ["comida", "cena"],
   },
   {
@@ -108,7 +108,7 @@ export const RECIPES: Recipe[] = [
     difficulty: "Fácil",
     tags: ["Meal prep", "Bajo en grasa", "Alto en proteína"],
     supermarket: "Mercadona",
-    image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=600",
+    image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=600&h=400&fit=crop&auto=format",
     mealType: ["comida", "cena"],
   },
   {
