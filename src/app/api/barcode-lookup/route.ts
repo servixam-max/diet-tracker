@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Force dynamic to avoid static generation issues
+export const dynamic = 'force-dynamic';
+
 // Open Food Facts API - free, no API key needed
 const OPEN_FOOD_FACTS_URL = "https://world.openfoodfacts.org/api/v0/product";
 
