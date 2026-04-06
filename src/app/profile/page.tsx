@@ -213,17 +213,45 @@ export default function ProfilePage() {
           </div>
         </motion.div>
 
-        {/* Login Button */}
-        <motion.button 
-          onClick={() => router.push("/login")}
-          className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl bg-green-500/20 border border-green-500/30 text-green-400 font-medium"
+        {/* Demo Mode Actions */}
+        <motion.div
+          className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <User size={20} />
-          <span>Iniciar sesión para guardar progreso</span>
-        </motion.button>
+          <div className="flex items-center gap-3 mb-2">
+            <User size={20} className="text-green-400" />
+            <h3 className="font-semibold">Cuenta</h3>
+          </div>
+          
+          <p className="text-sm text-zinc-400">
+            Estás en modo demo. Los datos no se guardan permanentemente.
+          </p>
+          
+          <motion.button 
+            onClick={() => {
+              localStorage.removeItem("demo-mode");
+              router.push("/login");
+            }}
+            className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold shadow-lg shadow-green-500/25"
+            whileTap={{ scale: 0.98 }}
+          >
+            <User size={20} />
+            <span>Iniciar sesión real</span>
+          </motion.button>
+          
+          <motion.button 
+            onClick={() => router.push("/register")}
+            className="w-full flex items-center justify-center gap-2 p-3 rounded-2xl bg-white/10 border border-white/20 text-white font-medium"
+            whileTap={{ scale: 0.98 }}
+          >
+            <span>Crear cuenta nueva</span>
+          </motion.button>
+        </motion.div>
+
+        {/* Spacer for BottomNavBar */}
+        <div className="h-24" />
       </div>
     </div>
   );
