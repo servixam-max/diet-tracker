@@ -35,28 +35,33 @@ const ALL_ACHIEVEMENTS: Omit<Achievement, "progress" | "unlocked" | "unlockedAt"
 ];
 
 export function AchievementBadge({ userId }: AchievementBadgeProps) {
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>(() => {
+    const saved = typeof window !== "undefined" 
+      ? localStorage.getItem(`achievements-${userId}`) 
+      : null;
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    // Initialize with some progress
+    const initial = ALL_ACHIEVEMENTS.map((a) => ({
+      ...a,
+      progress: Math.floor(Math.random() * a.requirement),
+      unlocked: false,
+    }));
+    // Unlock some for demo
+    initial[0].progress = 1;
+    initial[0].unlocked = true;
+    initial[1].progress = 5;
+    return initial;
+  });
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
   const { light } = useHaptic();
 
   useEffect(() => {
-    const saved = localStorage.getItem(`achievements-${userId}`);
-    if (saved) {
-      setAchievements(JSON.parse(saved));
-    } else {
-      // Initialize with some progress
-      const initial = ALL_ACHIEVEMENTS.map((a) => ({
-        ...a,
-        progress: Math.floor(Math.random() * a.requirement),
-        unlocked: false,
-      }));
-      // Unlock some for demo
-      initial[0].progress = 1;
-      initial[0].unlocked = true;
-      initial[1].progress = 5;
-      setAchievements(initial);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`achievements-${userId}`, JSON.stringify(achievements));
     }
-  }, [userId]);
+  }, [achievements, userId]);
 
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
   const totalCount = achievements.length;

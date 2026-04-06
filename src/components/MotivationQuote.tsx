@@ -29,16 +29,13 @@ interface MotivationQuoteProps {
 }
 
 export function MotivationQuote({ userId }: MotivationQuoteProps) {
-  const [quoteIndex, setQuoteIndex] = useState(0);
+  // Initialize with random quote using lazy initialization
+  const [quoteIndex, setQuoteIndex] = useState(() => 
+    Math.floor(Math.random() * quotes.length)
+  );
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [liked, setLiked] = useState(false);
   const { light, success } = useHaptic();
-
-  // Initialize with random quote on client side
-  useEffect(() => {
-    const randomIndex = Math.floor(Math.random() * quotes.length);
-    setQuoteIndex(randomIndex);
-  }, []);
 
   const quote = quotes[quoteIndex];
 

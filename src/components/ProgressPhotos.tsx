@@ -18,24 +18,24 @@ interface ProgressPhotosProps {
 }
 
 export function ProgressPhotos({ userId }: ProgressPhotosProps) {
-  const [photos, setPhotos] = useState<ProgressPhoto[]>([]);
+  const [photos, setPhotos] = useState<ProgressPhoto[]>(() => {
+    // Initialize from localStorage
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(`progress-photos-${userId}`);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    }
+    // Default sample data
+    return [
+      { id: "1", date: "2024-01-01", imageUrl: "", note: "Inicio del programa", weight: 85 },
+      { id: "2", date: "2024-02-01", imageUrl: "", note: "Primer mes", weight: 82 },
+      { id: "3", date: "2024-03-01", imageUrl: "", note: "Dos meses", weight: 79 },
+    ];
+  });
   const [selectedPhoto, setSelectedPhoto] = useState<ProgressPhoto | null>(null);
   const [showCamera, setShowCamera] = useState(false);
   const { light } = useHaptic();
-
-  useEffect(() => {
-    const saved = localStorage.getItem(`progress-photos-${userId}`);
-    if (saved) {
-      setPhotos(JSON.parse(saved));
-    } else {
-      // Sample data
-      setPhotos([
-        { id: "1", date: "2024-01-01", imageUrl: "", note: "Inicio del programa", weight: 85 },
-        { id: "2", date: "2024-02-01", imageUrl: "", note: "Primer mes", weight: 82 },
-        { id: "3", date: "2024-03-01", imageUrl: "", note: "Dos meses", weight: 79 },
-      ]);
-    }
-  }, [userId]);
 
   function addPhoto() {
     light();
